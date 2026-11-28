@@ -10,6 +10,7 @@ import 'tabs/dashboard_tab.dart';
 import 'tabs/fuel_tab.dart';
 import 'tabs/garage_tab.dart';
 import 'tabs/service_tab.dart';
+import 'widgets/ad_banner_widget.dart';
 import 'widgets/branded_splash_screen.dart';
 import 'widgets/push_notification_banner.dart';
 
@@ -265,55 +266,61 @@ class _GarageShellState extends State<GarageShell> {
             index: _tabIndex,
             children: pages,
           ),
-          bottomNavigationBar: Container(
-            decoration: const BoxDecoration(
-              color: AppColors.surface,
-              border: Border(
-                top: BorderSide(color: AppColors.border, width: 1),
+          bottomNavigationBar: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AdBannerWidget(isProUnlocked: ctrl.isProUnlocked),
+              Container(
+                decoration: const BoxDecoration(
+                  color: AppColors.surface,
+                  border: Border(
+                    top: BorderSide(color: AppColors.border, width: 1),
+                  ),
+                ),
+                child: NavigationBar(
+                  selectedIndex: _tabIndex,
+                  backgroundColor: AppColors.surface,
+                  indicatorColor: AppColors.racingOrange.withOpacity(0.2),
+                  surfaceTintColor: Colors.transparent,
+                  height: 66,
+                  onDestinationSelected: (i) => setState(() => _tabIndex = i),
+                  destinations: [
+                    NavigationDestination(
+                      icon: const Icon(Icons.dashboard_outlined),
+                      selectedIcon: const Icon(
+                        Icons.dashboard_rounded,
+                        color: AppColors.racingOrange,
+                      ),
+                      label: s.navDashboard,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.local_gas_station_outlined),
+                      selectedIcon: const Icon(
+                        Icons.local_gas_station_rounded,
+                        color: AppColors.emerald,
+                      ),
+                      label: s.navFuel,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.build_outlined),
+                      selectedIcon: const Icon(
+                        Icons.build_rounded,
+                        color: AppColors.sky,
+                      ),
+                      label: s.navService,
+                    ),
+                    NavigationDestination(
+                      icon: const Icon(Icons.garage_outlined),
+                      selectedIcon: const Icon(
+                        Icons.garage_rounded,
+                        color: AppColors.racingOrange,
+                      ),
+                      label: s.navGarage,
+                    ),
+                  ],
+                ),
               ),
-            ),
-            child: NavigationBar(
-              selectedIndex: _tabIndex,
-              backgroundColor: AppColors.surface,
-              indicatorColor: AppColors.racingOrange.withOpacity(0.2),
-              surfaceTintColor: Colors.transparent,
-              height: 66,
-              onDestinationSelected: (i) => setState(() => _tabIndex = i),
-              destinations: [
-                NavigationDestination(
-                  icon: const Icon(Icons.dashboard_outlined),
-                  selectedIcon: const Icon(
-                    Icons.dashboard_rounded,
-                    color: AppColors.racingOrange,
-                  ),
-                  label: s.navDashboard,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.local_gas_station_outlined),
-                  selectedIcon: const Icon(
-                    Icons.local_gas_station_rounded,
-                    color: AppColors.emerald,
-                  ),
-                  label: s.navFuel,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.build_outlined),
-                  selectedIcon: const Icon(
-                    Icons.build_rounded,
-                    color: AppColors.sky,
-                  ),
-                  label: s.navService,
-                ),
-                NavigationDestination(
-                  icon: const Icon(Icons.garage_outlined),
-                  selectedIcon: const Icon(
-                    Icons.garage_rounded,
-                    color: AppColors.racingOrange,
-                  ),
-                  label: s.navGarage,
-                ),
-              ],
-            ),
+            ],
           ),
         );
       },

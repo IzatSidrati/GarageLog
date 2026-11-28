@@ -178,7 +178,7 @@ class AppStrings {
       );
   String get proFeature1 => t('Garasi Motor & Mobil Tanpa Batas', 'Unlimited Motorcycles & Cars');
   String get proFeature2 => t('Stok Sparepart & Peralatan Tanpa Batas', 'Unlimited Garage Stock & Tools');
-  String get proFeature3 => t('Ekspor Buku Servis Siap Jual & Backup JSON', 'Resale Service Book & JSON Backup');
+  String get proFeature3 => t('Bebas Iklan (Ad-Free) & Ekspor Buku Servis', 'Ad-Free Experience & Resale Service Book');
   String get proPrice => currency == AppCurrency.idr ? 'Rp 49.000' : '\$3.99';
   String get proBuyCta => t(
         'Beli Pro Pass Sekali Bayar',
@@ -188,6 +188,44 @@ class AppStrings {
         'Integrasi Google Play Billing siap dihubungkan saat rilis Play Console. Gunakan tombol simulasi dev di bawah untuk uji fitur Pro sekarang.',
         'Google Play Billing hook ready for Play Console release. Use the Dev Simulation button below to test Pro features right now.',
       );
+  String get proProductPending => t(
+        'Produk Pro Pass (garagelog_pro_pass) belum aktif di Play Console. Aktifkan di Play Console terlebih dahulu.',
+        'Pro Pass product (garagelog_pro_pass) is not live on Play Console yet. Activate it in Play Console first.',
+      );
+  String get proStoreUnavailable => t(
+        'Pembelian Google Play / App Store hanya tersedia saat dijalankan sebagai aplikasi native di HP.',
+        'Google Play / App Store billing is only available when installed natively on a mobile device.',
+      );
+  String get restorePurchaseCta => t('Pulihkan Pembelian', 'Restore Purchase');
+  String get restorePurchaseChecked => t(
+        'Memeriksa riwayat pembelian Google Play / App Store Anda...',
+        'Checking your Google Play / App Store purchase history...',
+      );
+
+  // About & Privacy Policy
+  String get aboutPrivacyTitle => t('Tentang & Kebijakan Privasi', 'About & Privacy Policy');
+  String get appVersionLabel => t('Versi', 'Version');
+  String get privacyLocalTitle => t('100% Penyimpanan Lokal', '100% Local Storage');
+  String get privacyLocalBody => t(
+        'Data kendaraan, catatan bensin, riwayat servis, stok garasi, dan foto nota tersimpan lokal di perangkat Anda — tidak dikirim ke server kami.',
+        'Vehicles, fuel logs, service history, garage stock, and receipt photos stay locally on your device — never uploaded to our servers.',
+      );
+  String get privacyCameraTitle => t('Kamera & Scan Nota On-Device', 'Camera & On-Device OCR');
+  String get privacyCameraBody => t(
+        'Akses kamera/galeri hanya dipakai saat Anda melampirkan atau memindai nota servis menggunakan Google ML Kit langsung di perangkat.',
+        'Camera/photo access is only used when attaching or scanning workshop receipts via on-device Google ML Kit.',
+      );
+  String get privacyAdsTitle => t('Iklan Google AdMob', 'Google AdMob Advertising');
+  String get privacyAdsBody => t(
+        'Versi gratis menampilkan iklan Banner & Native dari Google AdMob (dapat menggunakan Advertising ID). Pemilik Pro Pass bebas iklan.',
+        'The free version shows Banner & Native ads via Google AdMob (which may use Advertising ID). Pro Pass removes all ads.',
+      );
+  String get privacyBillingTitle => t('Pembelian Pro Pass', 'Pro Pass Purchases');
+  String get privacyBillingBody => t(
+        'Pembayaran Pro Pass diproses aman melalui Google Play Billing / Apple App Store. Kami tidak menyimpan data kartu pembayaran Anda.',
+        'Pro Pass purchases are processed securely by Google Play Billing / Apple App Store. We never store payment credentials.',
+      );
+  String get privacyContactLabel => t('Kontak Developer', 'Developer Contact');
   String get proDevActivate => t(
         'Simulasi Dev: Aktifkan Pro Pass',
         'Dev Simulation: Unlock Pro Pass',

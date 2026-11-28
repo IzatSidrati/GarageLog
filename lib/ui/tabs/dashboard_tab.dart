@@ -6,6 +6,7 @@ import '../../models/service_entry.dart';
 import '../../models/vehicle.dart';
 import '../../state/garage_controller.dart';
 import '../../theme/app_theme.dart';
+import '../widgets/ad_native_widget.dart';
 import '../widgets/add_service_sheet.dart';
 import '../widgets/quick_fuel_sheet.dart';
 import '../widgets/top_brands_card.dart';
@@ -191,6 +192,7 @@ class DashboardTab extends StatelessWidget {
             ),
           ),
         ),
+        AdNativeWidget(isProUnlocked: controller.isProUnlocked),
         const SizedBox(height: 12),
         TopBrandsCard(
           controller: controller,

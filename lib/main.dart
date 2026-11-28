@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 
+import 'services/ad_service.dart';
+import 'services/iap_service.dart';
 import 'state/garage_controller.dart';
 import 'theme/app_theme.dart';
 import 'ui/garage_shell.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
+  AdService.initialize();
   final controller = GarageController();
   controller.init();
+  IapService.initialize(
+    onProUnlocked: () => controller.setProUnlocked(true),
+  );
   runApp(GarageLogApp(controller: controller, enableSplashDelay: true));
 }
 

@@ -7,6 +7,8 @@ import 'package:garage_log/models/health_status.dart';
 import 'package:garage_log/models/master_profile.dart';
 import 'package:garage_log/models/service_entry.dart';
 import 'package:garage_log/models/vehicle.dart';
+import 'package:garage_log/services/ad_config.dart';
+import 'package:garage_log/services/iap_service.dart';
 import 'package:garage_log/services/receipt_parser.dart';
 import 'package:garage_log/state/garage_controller.dart';
 import 'package:garage_log/ui/widgets/branded_splash_screen.dart';
@@ -506,6 +508,35 @@ GRAND TOTAL                \$155.50
       expect(testDispatch.title, contains('Honda Vario 160 ABS'));
       expect(testDispatch.body, isNotEmpty);
     });
+
+    test('resolves AdMob production IDs in release mode and Google test IDs in debug mode',
+        () {
+      expect(AdConfig.appId, 'ca-app-pub-9171274707010006~2398578292');
+
+      expect(
+        AdConfig.resolveBannerUnitId(isReleaseMode: true, isIos: false),
+        'ca-app-pub-9171274707010006/3819471178',
+      );
+      expect(
+        AdConfig.resolveNativeUnitId(isReleaseMode: true, isIos: false),
+        'ca-app-pub-9171274707010006/5681161843',
+      );
+
+      // Debug builds always use official Google test IDs
+      expect(
+        AdConfig.resolveBannerUnitId(isReleaseMode: false, isIos: false),
+        AdConfig.androidTestBannerUnitId,
+      );
+      expect(
+        AdConfig.resolveNativeUnitId(isReleaseMode: false, isIos: false),
+        AdConfig.androidTestNativeUnitId,
+      );
+      expect(
+        AdConfig.resolveBannerUnitId(isReleaseMode: false, isIos: true),
+        AdConfig.iosTestBannerUnitId,
+      );
+      expect(IapConfig.proPassProductId, 'garagelog_pro_pass');
+    });
   });
 
   group('GarageLogApp UI smoke tests', () {
@@ -615,6 +646,7 @@ GRAND TOTAL                \$155.50
       await tester.pumpAndSettle();
 
       expect(find.text('Upgrade to GarageLog Pro Pass'), findsOneWidget);
+      expect(find.byKey(const Key('pro_restore_button')), findsOneWidget);
       expect(find.byKey(const Key('dev_pro_toggle_button')), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('dev_pro_toggle_button')));
@@ -641,6 +673,19 @@ GRAND TOTAL                \$155.50
       await tester.tap(find.byKey(const Key('open_backup_restore_btn')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('copy_backup_json_btn')), findsOneWidget);
+
+      // Close backup sheet and verify About & Privacy Policy sheet
+      Navigator.of(tester.element(find.byType(Scaffold).first)).pop();
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('open_about_privacy_btn')),
+        200,
+      );
+      await tester.tap(find.byKey(const Key('open_about_privacy_btn')));
+      await tester.pumpAndSettle();
+      expect(find.text('Google AdMob Advertising'), findsOneWidget);
+      expect(find.textContaining('1.0.0'), findsOneWidget);
     });
 
     testWidgets('auto-fills service form, displays Top Brands, and triggers Push Notification banner',

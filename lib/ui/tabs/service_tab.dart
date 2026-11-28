@@ -7,6 +7,7 @@ import '../../models/health_status.dart';
 import '../../models/service_entry.dart';
 import '../../state/garage_controller.dart';
 import '../../theme/app_theme.dart';
+import '../widgets/ad_native_widget.dart';
 import '../widgets/add_service_sheet.dart';
 import '../widgets/service_book_export_sheet.dart';
 
@@ -224,6 +225,7 @@ class ServiceTab extends StatelessWidget {
             );
           }).toList(),
         ),
+        AdNativeWidget(isProUnlocked: controller.isProUnlocked),
         const SizedBox(height: 18),
         Text(
           '${s.serviceHistory} (${services.length})',

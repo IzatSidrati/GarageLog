@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../../services/iap_service.dart';
 import '../../state/garage_controller.dart';
 import '../../theme/app_theme.dart';
 
@@ -22,7 +24,7 @@ Future<bool> showProPassModal({
   return result ?? false;
 }
 
-class _ProPassSheet extends StatelessWidget {
+class _ProPassSheet extends StatefulWidget {
   const _ProPassSheet({
     required this.controller,
     required this.triggeredByLimit,
@@ -34,9 +36,16 @@ class _ProPassSheet extends StatelessWidget {
   final String? customLimitNote;
 
   @override
+  State<_ProPassSheet> createState() => _ProPassSheetState();
+}
+
+class _ProPassSheetState extends State<_ProPassSheet> {
+  bool _isBusy = false;
+
+  @override
   Widget build(BuildContext context) {
-    final s = controller.strings;
-    final isPro = controller.isProUnlocked;
+    final s = widget.controller.strings;
+    final isPro = widget.controller.isProUnlocked;
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
@@ -62,13 +71,13 @@ class _ProPassSheet extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppColors.racingOrange.withOpacity(0.24),
-                  AppColors.racingRed.withOpacity(0.14),
+                  AppColors.racingOrange.withOpacity(0.18),
+                  AppColors.racingRed.withOpacity(0.08),
                 ],
               ),
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: AppColors.racingOrange.withOpacity(0.55),
+                color: AppColors.racingOrange.withOpacity(0.45),
               ),
             ),
             child: Row(
@@ -112,7 +121,7 @@ class _ProPassSheet extends StatelessWidget {
               ],
             ),
           ),
-          if (triggeredByLimit && !isPro) ...[
+          if (widget.triggeredByLimit && !isPro) ...[
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -123,12 +132,15 @@ class _ProPassSheet extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.lock_outline_rounded,
-                      color: AppColors.amber, size: 18),
+                  const Icon(
+                    Icons.lock_outline_rounded,
+                    color: AppColors.amber,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      customLimitNote ?? s.proLimitNote,
+                      widget.customLimitNote ?? s.proLimitNote,
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.textSecondary,
@@ -142,53 +154,117 @@ class _ProPassSheet extends StatelessWidget {
           const SizedBox(height: 16),
           _benefitRow(Icons.garage_rounded, s.proFeature1),
           const SizedBox(height: 10),
-          _benefitRow(Icons.description_outlined, s.proFeature2),
+          _benefitRow(Icons.inventory_2_outlined, s.proFeature2),
           const SizedBox(height: 10),
-          _benefitRow(Icons.notifications_active_outlined, s.proFeature3),
+          _benefitRow(Icons.block_rounded, s.proFeature3),
           const SizedBox(height: 18),
-          if (!isPro)
+          if (!isPro) ...[
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text(s.proStoreHint)),
-                  );
-                },
+                key: const Key('pro_buy_button'),
+                onPressed: _isBusy ? null : _handleBuyPro,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.racingOrange,
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
-                child: Text('${s.proBuyCta} • ${s.proPrice}'),
+                child: _isBusy
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : Text('${s.proBuyCta} • ${s.proPrice}'),
               ),
             ),
-          const SizedBox(height: 10),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              key: const Key('dev_pro_toggle_button'),
-              onPressed: () async {
-                final next = !isPro;
-                await controller.setProUnlocked(next);
-                if (context.mounted) {
-                  Navigator.of(context).pop(next);
-                }
-              },
-              icon: Icon(
-                isPro ? Icons.restart_alt_rounded : Icons.developer_mode_rounded,
-                size: 18,
-                color: AppColors.sky,
-              ),
-              label: Text(
-                isPro ? s.proDevDeactivate : s.proDevActivate,
-                style: const TextStyle(color: AppColors.sky),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: TextButton.icon(
+                key: const Key('pro_restore_button'),
+                onPressed: _isBusy ? null : _handleRestorePurchase,
+                icon: const Icon(Icons.restore_rounded, size: 17),
+                label: Text(s.restorePurchaseCta),
               ),
             ),
-          ),
+          ],
+          // Dev simulation button is strictly hidden in Release builds!
+          if (kDebugMode) ...[
+            const SizedBox(height: 6),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                key: const Key('dev_pro_toggle_button'),
+                onPressed: () async {
+                  final next = !isPro;
+                  await widget.controller.setProUnlocked(next);
+                  if (context.mounted) {
+                    Navigator.of(context).pop(next);
+                  }
+                },
+                icon: Icon(
+                  isPro
+                      ? Icons.restart_alt_rounded
+                      : Icons.developer_mode_rounded,
+                  size: 18,
+                  color: AppColors.sky,
+                ),
+                label: Text(
+                  isPro ? s.proDevDeactivate : s.proDevActivate,
+                  style: const TextStyle(color: AppColors.sky),
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  Future<void> _handleBuyPro() async {
+    final s = widget.controller.strings;
+    setState(() => _isBusy = true);
+    final res = await IapService.buyProPass();
+    if (!mounted) return;
+    setState(() => _isBusy = false);
+
+    switch (res.status) {
+      case IapActionStatus.launched:
+        return;
+      case IapActionStatus.productNotConfigured:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(s.proProductPending)),
+        );
+        return;
+      case IapActionStatus.unavailable:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(s.proStoreUnavailable)),
+        );
+        return;
+      case IapActionStatus.failed:
+      case IapActionStatus.restoredRequested:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(s.proStoreHint)),
+        );
+        return;
+    }
+  }
+
+  Future<void> _handleRestorePurchase() async {
+    final s = widget.controller.strings;
+    setState(() => _isBusy = true);
+    final res = await IapService.restorePurchases();
+    if (!mounted) return;
+    setState(() => _isBusy = false);
+
+    final msg = res.status == IapActionStatus.restoredRequested
+        ? s.restorePurchaseChecked
+        : s.proStoreUnavailable;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
   Widget _benefitRow(IconData icon, String text) {

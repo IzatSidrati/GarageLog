@@ -5,6 +5,7 @@ import '../../models/garage_item.dart';
 import '../../models/vehicle.dart';
 import '../../state/garage_controller.dart';
 import '../../theme/app_theme.dart';
+import '../widgets/about_privacy_sheet.dart';
 import '../widgets/backup_restore_sheet.dart';
 import '../widgets/inventory_form_sheet.dart';
 import '../widgets/master_profile_sheet.dart';
@@ -319,6 +320,19 @@ class _GarageTabState extends State<GarageTab> {
                   ),
                   icon: const Icon(Icons.save_alt_rounded, size: 18),
                   label: Text(s.backupRestoreTitle),
+                ),
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: const Key('open_about_privacy_btn'),
+                  onPressed: () => showAboutPrivacySheet(
+                    context: context,
+                    controller: ctrl,
+                  ),
+                  icon: const Icon(Icons.privacy_tip_outlined, size: 18),
+                  label: Text(s.aboutPrivacyTitle),
                 ),
               ),
             ],
