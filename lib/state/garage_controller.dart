@@ -11,6 +11,8 @@ import '../models/health_status.dart';
 import '../models/master_profile.dart';
 import '../models/service_entry.dart';
 import '../models/vehicle.dart';
+import '../services/brand_detector.dart';
+import '../services/reminder_notification_service.dart';
 
 class GarageController extends ChangeNotifier {
   GarageController({SharedPreferences? prefs}) : _prefs = prefs;
@@ -28,6 +30,7 @@ class GarageController extends ChangeNotifier {
   static const _kLanguage = 'garagelog_language_v1';
   static const _kCurrency = 'garagelog_currency_v1';
   static const _kProUnlocked = 'garagelog_pro_unlocked_v1';
+  static const _kNotificationsEnabled = 'garagelog_notif_enabled_v1';
 
   SharedPreferences? _prefs;
   bool _loaded = false;
@@ -42,10 +45,12 @@ class GarageController extends ChangeNotifier {
   AppLanguage _language = AppLanguage.id;
   AppCurrency _currency = AppCurrency.idr;
   bool _isProUnlocked = false;
+  bool _notificationsEnabled = true;
 
   bool get isLoaded => _loaded;
   bool get isSetupCompleted => _setupCompleted;
   bool get needsInitialSetup => _loaded && !_setupCompleted;
+  bool get notificationsEnabled => _notificationsEnabled;
   GarageMasterProfile get masterProfile => _masterProfile;
   List<Vehicle> get vehicles => List.unmodifiable(_vehicles);
   List<FuelEntry> get allFuelEntries => List.unmodifiable(_fuelEntries);
@@ -58,7 +63,11 @@ class GarageController extends ChangeNotifier {
   AppLanguage get language => _language;
   AppCurrency get currency => _currency;
   bool get isProUnlocked => _isProUnlocked;
-  AppStrings get strings => AppStrings(_language, _currency);
+  AppStrings get strings => AppStrings(
+        _language,
+        _currency,
+        usdRateIdr: _masterProfile.usdRateIdr,
+      );
 
   bool get canAddMoreVehicles => _isProUnlocked || _vehicles.isEmpty;
   bool get canAddMoreInventory =>
@@ -95,6 +104,7 @@ class GarageController extends ChangeNotifier {
     }
 
     _isProUnlocked = prefs.getBool(_kProUnlocked) ?? false;
+    _notificationsEnabled = prefs.getBool(_kNotificationsEnabled) ?? true;
     final initialized = prefs.getBool(_kInitialized) ?? false;
 
     if (!initialized) {
@@ -251,6 +261,7 @@ class GarageController extends ChangeNotifier {
         nextIntervalKm: 2000,
         nextIntervalMonths: 2,
         notes: 'SPX2 0.8L + Gear Oil',
+        partBrand: 'AHM Oil',
       ),
       ServiceEntry(
         id: 'srv_2',
@@ -264,6 +275,7 @@ class GarageController extends ChangeNotifier {
         nextIntervalKm: 4000,
         nextIntervalMonths: 4,
         notes: 'Roller & V-Belt masih aman 80%',
+        partBrand: 'Daytona',
       ),
       ServiceEntry(
         id: 'srv_3',
@@ -277,6 +289,21 @@ class GarageController extends ChangeNotifier {
         nextIntervalKm: 8000,
         nextIntervalMonths: 8,
         notes: 'Kampas original, ban depan/belakang tebal',
+        partBrand: 'Nissin',
+      ),
+      ServiceEntry(
+        id: 'srv_4',
+        vehicleId: sampleVehicleId,
+        date: today.subtract(const Duration(days: 105)),
+        odometerKm: 10900,
+        category: ServiceCategory.oil,
+        title: 'Ganti Oli Mesin Rutin',
+        cost: 75000,
+        workshop: 'AHASS Motor Mandiri',
+        nextIntervalKm: 2000,
+        nextIntervalMonths: 2,
+        notes: 'SPX2 0.8L',
+        partBrand: 'AHM Oil',
       ),
     ];
 
@@ -440,6 +467,12 @@ class GarageController extends ChangeNotifier {
     await prefs.setString(_kLanguage, _language.name);
     await prefs.setString(_kCurrency, _currency.name);
     await prefs.setBool(_kProUnlocked, _isProUnlocked);
+    await prefs.setBool(_kNotificationsEnabled, _notificationsEnabled);
+
+    await ReminderNotificationService.syncReminders(
+      enabled: _notificationsEnabled,
+      reminders: buildUpcomingReminders(),
+    );
   }
 
   // Preferences
@@ -475,6 +508,155 @@ class GarageController extends ChangeNotifier {
     _isProUnlocked = unlocked;
     await _persistAll();
     notifyListeners();
+  }
+
+  Future<void> setNotificationsEnabled(bool enabled) async {
+    _notificationsEnabled = enabled;
+    if (enabled) {
+      await ReminderNotificationService.initAndRequestPermission();
+    }
+    await _persistAll();
+    notifyListeners();
+  }
+
+  /// Builds all upcoming offline push notifications (STNK H-14/H-3 & Service H-3).
+  List<ScheduledReminderItem> buildUpcomingReminders({DateTime? now}) {
+    final ref = now ?? DateTime.now();
+    final s = strings;
+    final list = <ScheduledReminderItem>[];
+    int nextId = 1000;
+
+    for (final vehicle in _vehicles) {
+      final taxDate = DateTime(
+        vehicle.taxDueDate.year,
+        vehicle.taxDueDate.month,
+        vehicle.taxDueDate.day,
+        9,
+        0,
+      );
+
+      for (final leadDays in [14, 3]) {
+        final fireAt = taxDate.subtract(Duration(days: leadDays));
+        if (fireAt.isAfter(ref)) {
+          list.add(
+            ScheduledReminderItem(
+              id: nextId++,
+              vehicleName: vehicle.name,
+              scheduledAt: fireAt,
+              title: s.t(
+                'Pengingat Pajak STNK (${vehicle.plateNumber})',
+                'Vehicle Tax Reminder (${vehicle.plateNumber})',
+              ),
+              body: s.t(
+                '${vehicle.name} jatuh tempo pajak $leadDays hari lagi (${s.formatDate(taxDate)}).',
+                '${vehicle.name} tax is due in $leadDays days (${s.formatDate(taxDate)}).',
+              ),
+            ),
+          );
+        }
+      }
+
+      final health = computeHealthItems(vehicle, now: ref);
+      for (final item in health) {
+        if (item.isTax || item.nextDueDate == null) continue;
+        final dueDate = DateTime(
+          item.nextDueDate!.year,
+          item.nextDueDate!.month,
+          item.nextDueDate!.day,
+          9,
+          0,
+        );
+        final fireAt = dueDate.subtract(const Duration(days: 3));
+        if (fireAt.isAfter(ref)) {
+          final catName =
+              _categoryLabel(item.category ?? ServiceCategory.other, s);
+          list.add(
+            ScheduledReminderItem(
+              id: nextId++,
+              vehicleName: vehicle.name,
+              scheduledAt: fireAt,
+              title: s.t(
+                'Jadwal $catName — ${vehicle.name}',
+                '$catName Due Soon — ${vehicle.name}',
+              ),
+              body: s.t(
+                '3 hari lagi jadwal $catName (${s.formatDate(dueDate)}). Siapkan servis di bengkel langganan.',
+                '$catName is due in 3 days (${s.formatDate(dueDate)}).',
+              ),
+            ),
+          );
+        }
+      }
+    }
+
+    list.sort((a, b) => a.scheduledAt.compareTo(b.scheduledAt));
+    return list;
+  }
+
+  /// Sends an immediate contextual reminder notification (for user testing).
+  Future<NotificationDispatchResult> triggerTestReminderNotification({
+    DateTime? now,
+  }) async {
+    final s = strings;
+    final vehicle = activeVehicle;
+    String title = s.t(
+      'Pengingat Servis GarageLog',
+      'GarageLog Maintenance Alert',
+    );
+    String body = s.t(
+      'Notifikasi pengingat offline aktif! Anda akan diingatkan otomatis sebelum jadwal servis & pajak STNK.',
+      'Offline reminder notifications are active! You will be alerted before service & tax due dates.',
+    );
+
+    if (vehicle != null) {
+      final health = computeHealthItems(vehicle, now: now);
+      final urgent = health.where(
+        (h) => h.level == HealthLevel.overdue || h.level == HealthLevel.soon,
+      );
+      if (urgent.isNotEmpty) {
+        final top = urgent.first;
+        final label = _healthLabel(top, s);
+        title = s.t(
+          '$label • ${vehicle.name}',
+          '$label • ${vehicle.name}',
+        );
+        if (top.isTax && top.daysRemaining != null) {
+          body = top.daysRemaining! >= 0
+              ? s.t(
+                  'Pajak STNK (${vehicle.plateNumber}) jatuh tempo ${top.daysRemaining} hari lagi (${s.formatDate(top.nextDueDate!)}).',
+                  'Tax (${vehicle.plateNumber}) is due in ${top.daysRemaining} days (${s.formatDate(top.nextDueDate!)}).',
+                )
+              : s.t(
+                  'Pajak STNK (${vehicle.plateNumber}) sudah lewat ${top.daysRemaining!.abs()} hari!',
+                  'Tax (${vehicle.plateNumber}) is overdue by ${top.daysRemaining!.abs()} days!',
+                );
+        } else if (top.kmRemaining != null) {
+          body = top.kmRemaining! >= 0
+              ? s.t(
+                  'Sisa ${s.formatKm(top.kmRemaining!)} menuju jadwal $label berikutnya.',
+                  '${s.formatKm(top.kmRemaining!)} left until your next $label.',
+                )
+              : s.t(
+                  'Jadwal $label sudah lewat ${s.formatKm(top.kmRemaining!.abs())}. Segera servis!',
+                  '$label is overdue by ${s.formatKm(top.kmRemaining!.abs())}. Service recommended!',
+                );
+        }
+      } else {
+        title = s.t(
+          'Semua Aman • ${vehicle.name}',
+          'All Healthy • ${vehicle.name}',
+        );
+        body = s.t(
+          'Odometer ${s.formatKm(vehicle.odometerKm)} • Pajak STNK ${s.formatDate(vehicle.taxDueDate)}. Pengingat offline aktif!',
+          'Odometer ${s.formatKm(vehicle.odometerKm)} • Tax due ${s.formatDate(vehicle.taxDueDate)}. Offline alerts ready!',
+        );
+      }
+    }
+
+    return ReminderNotificationService.sendTestNotification(
+      title: title,
+      body: body,
+    );
   }
 
   // Vehicles
@@ -606,7 +788,9 @@ class GarageController extends ChangeNotifier {
     int nextIntervalMonths = 0,
     DateTime? date,
     String notes = '',
+    String partBrand = '',
     List<String> consumedItemIds = const [],
+    String? receiptImageBase64,
   }) async {
     final usedNames = <String>[];
     if (consumedItemIds.isNotEmpty) {
@@ -629,6 +813,10 @@ class GarageController extends ChangeNotifier {
         .where((part) => part.isNotEmpty)
         .join('\n');
 
+    final resolvedBrand = partBrand.trim().isNotEmpty
+        ? partBrand.trim()
+        : (BrandDetector.detectFromText('$title $combinedNotes') ?? '');
+
     final entry = ServiceEntry(
       id: _newId('srv'),
       vehicleId: vehicleId,
@@ -641,6 +829,8 @@ class GarageController extends ChangeNotifier {
       nextIntervalKm: nextIntervalKm,
       nextIntervalMonths: nextIntervalMonths,
       notes: combinedNotes,
+      partBrand: resolvedBrand,
+      receiptImageBase64: receiptImageBase64,
     );
     _serviceEntries = [..._serviceEntries, entry];
 
@@ -952,6 +1142,89 @@ class GarageController extends ChangeNotifier {
     return (total: fuel + service, fuel: fuel, service: service);
   }
 
+  /// Returns known sparepart brands (user's past brands first, then popular presets).
+  List<String> get suggestedBrands {
+    final seen = <String>{};
+    final result = <String>[];
+    for (final s in _serviceEntries) {
+      final b = s.partBrand.trim();
+      if (b.isNotEmpty && seen.add(b.toLowerCase())) {
+        result.add(b);
+      }
+    }
+    for (final b in BrandDetector.popularBrands) {
+      if (seen.add(b.toLowerCase())) {
+        result.add(b);
+      }
+    }
+    return result;
+  }
+
+  /// Computes top most frequently used sparepart/oil brands.
+  /// Pass [vehicleId] to scope to a single vehicle, or `null` for all vehicles.
+  List<BrandUsageStat> computeTopSparepartBrands({
+    String? vehicleId,
+    int limit = 5,
+  }) {
+    final relevant = vehicleId != null
+        ? _serviceEntries.where((s) => s.vehicleId == vehicleId)
+        : _serviceEntries;
+
+    final counts = <String, int>{};
+    final displayNames = <String, String>{};
+    final spends = <String, double>{};
+    final categoryCounts = <String, Map<ServiceCategory, int>>{};
+    int totalUsages = 0;
+
+    for (final srv in relevant) {
+      final rawBrand = srv.partBrand.trim().isNotEmpty
+          ? srv.partBrand.trim()
+          : (BrandDetector.detectFromText('${srv.title} ${srv.notes}') ?? '');
+      if (rawBrand.isEmpty) continue;
+
+      final key = rawBrand.toLowerCase();
+      displayNames.putIfAbsent(key, () => rawBrand);
+      counts[key] = (counts[key] ?? 0) + 1;
+      spends[key] = (spends[key] ?? 0) + srv.cost;
+      categoryCounts.putIfAbsent(key, () => {});
+      categoryCounts[key]![srv.category] =
+          (categoryCounts[key]![srv.category] ?? 0) + 1;
+      totalUsages++;
+    }
+
+    if (counts.isEmpty || totalUsages == 0) return const [];
+
+    final stats = counts.keys.map((key) {
+      final catMap = categoryCounts[key]!;
+      ServiceCategory topCat = ServiceCategory.other;
+      int topCatCount = -1;
+      for (final entry in catMap.entries) {
+        if (entry.value > topCatCount) {
+          topCatCount = entry.value;
+          topCat = entry.key;
+        }
+      }
+      final count = counts[key]!;
+      return BrandUsageStat(
+        brand: displayNames[key]!,
+        usageCount: count,
+        totalSpend: spends[key] ?? 0,
+        share: count / totalUsages,
+        topCategory: topCat,
+      );
+    }).toList();
+
+    stats.sort((a, b) {
+      final countCmp = b.usageCount.compareTo(a.usageCount);
+      if (countCmp != 0) return countCmp;
+      final spendCmp = b.totalSpend.compareTo(a.totalSpend);
+      if (spendCmp != 0) return spendCmp;
+      return a.brand.compareTo(b.brand);
+    });
+
+    return stats.length > limit ? stats.sublist(0, limit) : stats;
+  }
+
   List<HealthStatusItem> computeHealthItems(
     Vehicle vehicle, {
     DateTime? now,
@@ -1191,9 +1464,12 @@ class GarageController extends ChangeNotifier {
           '${i + 1}. [${s.formatDate(srv.date)}] ${s.formatKm(srv.odometerKm)} — ${srv.title}',
         );
         final catName = _categoryLabel(srv.category, s);
+        final brandTag = srv.partBrand.isNotEmpty
+            ? ' • ${s.t('Merek', 'Brand')}: ${srv.partBrand}'
+            : '';
         final shop = srv.workshop.isNotEmpty ? ' • ${srv.workshop}' : '';
         buf.writeln(
-          '   $catName$shop • ${s.formatCurrency(srv.cost)}',
+          '   $catName$brandTag$shop • ${s.formatCurrency(srv.cost)}',
         );
         if (srv.notes.isNotEmpty) {
           buf.writeln('   ${s.t('Catatan', 'Notes')}: ${srv.notes}');

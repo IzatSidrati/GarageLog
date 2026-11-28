@@ -7,6 +7,7 @@ import 'package:garage_log/models/health_status.dart';
 import 'package:garage_log/models/master_profile.dart';
 import 'package:garage_log/models/service_entry.dart';
 import 'package:garage_log/models/vehicle.dart';
+import 'package:garage_log/services/receipt_parser.dart';
 import 'package:garage_log/state/garage_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -336,6 +337,105 @@ void main() {
         isTrue,
       );
     });
+
+    test('parses Indonesian & English workshop receipts automatically offline', () {
+      const idStrings = AppStrings(AppLanguage.id, AppCurrency.idr);
+      const idReceipt = '''
+AHASS MOTOR MANDIRI
+Jl. Merdeka No. 10
+KM : 15.240
+1. Oli Mesin SPX2 0.8L     Rp 68.000
+2. Servis CVT & Roller     Rp 95.000
+GRAND TOTAL                Rp 163.000
+''';
+      final parsedId = ReceiptParser.parse(idReceipt, idStrings);
+      expect(parsedId.workshop, 'AHASS MOTOR MANDIRI');
+      expect(parsedId.odometerKm, 15240);
+      expect(parsedId.totalCost, closeTo(163000, 0.01));
+      expect(parsedId.category, ServiceCategory.oil);
+      expect(parsedId.partBrand, 'AHM Oil');
+      expect(parsedId.title, contains('Oli Mesin SPX2'));
+
+      const enStrings = AppStrings(AppLanguage.en, AppCurrency.usd);
+      const enReceipt = '''
+PRECISION AUTO CARE
+ODO: 25400 km
+1. Brake Pad Replacement   \$120.50
+2. Tire Balancing          \$35.00
+GRAND TOTAL                \$155.50
+''';
+      final parsedEn = ReceiptParser.parse(enReceipt, enStrings);
+      expect(parsedEn.workshop, 'PRECISION AUTO CARE');
+      expect(parsedEn.odometerKm, 25400);
+      expect(parsedEn.totalCost, closeTo(155.50, 0.01));
+      expect(parsedEn.category, ServiceCategory.brakesTires);
+    });
+
+    test('ranks most frequently used sparepart brands per unit and across garage',
+        () async {
+      final ctrl = GarageController();
+      await ctrl.init(now: DateTime(2026, 5, 10), seedDemoIfFresh: true);
+      final vid = ctrl.activeVehicle!.id;
+
+      // Seeded demo has 2x AHM Oil, 1x Daytona, 1x Nissin
+      var top = ctrl.computeTopSparepartBrands(vehicleId: vid);
+      expect(top.first.brand, 'AHM Oil');
+      expect(top.first.usageCount, 2);
+
+      // Auto-detect Motul from title + add 2 more Motul services -> Motul becomes #1
+      for (int i = 0; i < 3; i++) {
+        await ctrl.addServiceEntry(
+          vehicleId: vid,
+          category: ServiceCategory.oil,
+          title: 'Ganti Oli Motul Scooter LE',
+          odometerKm: 15000 + (i * 2000),
+          cost: 120000,
+        );
+      }
+
+      top = ctrl.computeTopSparepartBrands(vehicleId: vid);
+      expect(top.first.brand, 'Motul');
+      expect(top.first.usageCount, 3);
+      expect(top.first.totalSpend, closeTo(360000, 0.01));
+    });
+
+    test('auto-converts values between IDR and USD using offline exchange rate',
+        () async {
+      final ctrl = GarageController();
+      await ctrl.init(now: DateTime(2026, 5, 10), seedDemoIfFresh: true);
+
+      // Default rate: 1 USD = Rp 16.000
+      expect(ctrl.strings.formatCurrency(160000), 'Rp 160.000');
+
+      await ctrl.setCurrency(AppCurrency.usd);
+      expect(ctrl.strings.formatCurrency(160000), '\$10.00');
+      expect(ctrl.strings.toBaseIdr(10.0), closeTo(160000, 0.01));
+
+      // Custom offline exchange rate: 1 USD = Rp 20.000
+      await ctrl.updateMasterProfile(
+        ctrl.masterProfile.copyWith(usdRateIdr: 20000),
+      );
+      expect(ctrl.strings.formatCurrency(160000), '\$8.00');
+      expect(ctrl.strings.toBaseIdr(5.0), closeTo(100000, 0.01));
+    });
+
+    test('schedules upcoming offline STNK & service push reminders', () async {
+      final now = DateTime(2026, 5, 10, 8, 0);
+      final ctrl = GarageController();
+      await ctrl.init(now: now, seedDemoIfFresh: true);
+
+      final reminders = ctrl.buildUpcomingReminders(now: now);
+      expect(reminders, isNotEmpty);
+      expect(
+        reminders.any((r) => r.title.contains('Pajak STNK')),
+        isTrue,
+      );
+
+      final testDispatch =
+          await ctrl.triggerTestReminderNotification(now: now);
+      expect(testDispatch.title, contains('Honda Vario 160 ABS'));
+      expect(testDispatch.body, isNotEmpty);
+    });
   });
 
   group('GarageLogApp UI smoke tests', () {
@@ -456,6 +556,52 @@ void main() {
       await tester.tap(find.byKey(const Key('open_backup_restore_btn')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('copy_backup_json_btn')), findsOneWidget);
+    });
+
+    testWidgets('auto-fills service form from workshop receipt text parser',
+        (WidgetTester tester) async {
+      final ctrl = GarageController();
+      await ctrl.init(now: DateTime(2026, 5, 10), seedDemoIfFresh: true);
+
+      await tester.pumpWidget(GarageLogApp(controller: ctrl));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('dashboard_quick_service_btn')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('smart_paste_receipt_btn')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('load_sample_receipt_btn')));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('parse_receipt_submit_btn')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('163000'), findsOneWidget);
+      expect(
+        find.textContaining('Oli Mesin SPX2'),
+        findsWidgets,
+      );
+
+      // Close sheet and verify Top Sparepart Brands dashboard card on Dashboard
+      Navigator.of(tester.element(find.byType(Scaffold).first)).pop();
+      await tester.pumpAndSettle();
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('top_brands_dashboard_card')),
+        250,
+      );
+      expect(find.text('Merek Sparepart Favorit'), findsOneWidget);
+      expect(find.text('AHM Oil'), findsOneWidget);
+      expect(find.text('Favorit #1'), findsOneWidget);
+
+      // Tap quick bell icon in AppBar to trigger Push Notification banner
+      await tester.tap(find.byKey(const Key('appbar_test_notif_btn')));
+      await tester.pump(const Duration(milliseconds: 350));
+      expect(find.byKey(const Key('push_notification_banner')), findsOneWidget);
+      // Dismiss banner before test ends to avoid pending timers
+      await tester.pump(const Duration(seconds: 6));
     });
   });
 }

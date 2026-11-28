@@ -7,6 +7,7 @@ class GarageMasterProfile {
     this.ownerName = '',
     this.defaultWorkshop = '',
     this.defaultFuelType = 'Pertamax',
+    this.usdRateIdr = 16000,
     this.oilIntervalKm = 2000,
     this.oilIntervalMonths = 2,
     this.routineIntervalKm = 4000,
@@ -19,6 +20,7 @@ class GarageMasterProfile {
   final String ownerName;
   final String defaultWorkshop;
   final String defaultFuelType;
+  final double usdRateIdr;
   final int oilIntervalKm;
   final int oilIntervalMonths;
   final int routineIntervalKm;
@@ -65,6 +67,7 @@ class GarageMasterProfile {
     String? ownerName,
     String? defaultWorkshop,
     String? defaultFuelType,
+    double? usdRateIdr,
     int? oilIntervalKm,
     int? oilIntervalMonths,
     int? routineIntervalKm,
@@ -77,6 +80,7 @@ class GarageMasterProfile {
       ownerName: ownerName ?? this.ownerName,
       defaultWorkshop: defaultWorkshop ?? this.defaultWorkshop,
       defaultFuelType: defaultFuelType ?? this.defaultFuelType,
+      usdRateIdr: usdRateIdr ?? this.usdRateIdr,
       oilIntervalKm: oilIntervalKm ?? this.oilIntervalKm,
       oilIntervalMonths: oilIntervalMonths ?? this.oilIntervalMonths,
       routineIntervalKm: routineIntervalKm ?? this.routineIntervalKm,
@@ -93,6 +97,7 @@ class GarageMasterProfile {
       'ownerName': ownerName,
       'defaultWorkshop': defaultWorkshop,
       'defaultFuelType': defaultFuelType,
+      'usdRateIdr': usdRateIdr,
       'oilIntervalKm': oilIntervalKm,
       'oilIntervalMonths': oilIntervalMonths,
       'routineIntervalKm': routineIntervalKm,
@@ -103,11 +108,13 @@ class GarageMasterProfile {
   }
 
   factory GarageMasterProfile.fromJson(Map<String, dynamic> json) {
+    final parsedRate = (json['usdRateIdr'] as num?)?.toDouble() ?? 16000;
     return GarageMasterProfile(
       garageName: (json['garageName'] as String?) ?? '',
       ownerName: (json['ownerName'] as String?) ?? '',
       defaultWorkshop: (json['defaultWorkshop'] as String?) ?? '',
       defaultFuelType: (json['defaultFuelType'] as String?) ?? 'Pertamax',
+      usdRateIdr: parsedRate > 0 ? parsedRate : 16000,
       oilIntervalKm: (json['oilIntervalKm'] as num?)?.toInt() ?? 2000,
       oilIntervalMonths: (json['oilIntervalMonths'] as num?)?.toInt() ?? 2,
       routineIntervalKm: (json['routineIntervalKm'] as num?)?.toInt() ?? 4000,

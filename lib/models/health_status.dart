@@ -66,3 +66,22 @@ class FuelAnalytics {
   final EfficiencyTrend trend;
   final double trendDeltaPercent;
 }
+
+class BrandUsageStat {
+  const BrandUsageStat({
+    required this.brand,
+    required this.usageCount,
+    required this.totalSpend,
+    required this.share,
+    required this.topCategory,
+  });
+
+  final String brand;
+  final int usageCount;
+  final double totalSpend;
+
+  /// Share of total brand usages from 0.0 to 1.0.
+  final double share;
+  final ServiceCategory topCategory;
+}
+

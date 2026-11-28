@@ -3,10 +3,38 @@ enum AppLanguage { id, en }
 enum AppCurrency { idr, usd }
 
 class AppStrings {
-  const AppStrings(this.language, this.currency);
+  const AppStrings(
+    this.language,
+    this.currency, {
+    this.usdRateIdr = 16000,
+  });
 
   final AppLanguage language;
   final AppCurrency currency;
+  final double usdRateIdr;
+
+  double get effectiveUsdRate => usdRateIdr > 0 ? usdRateIdr : 16000;
+
+  /// Converts a user-entered display amount (in active currency) into base IDR.
+  double toBaseIdr(double displayAmount) {
+    return currency == AppCurrency.usd
+        ? displayAmount * effectiveUsdRate
+        : displayAmount;
+  }
+
+  /// Converts a stored base IDR amount into the currently active display currency.
+  double fromBaseIdr(double baseIdrAmount) {
+    return currency == AppCurrency.usd
+        ? baseIdrAmount / effectiveUsdRate
+        : baseIdrAmount;
+  }
+
+  String formatEditableAmount(double baseIdrAmount) {
+    final val = fromBaseIdr(baseIdrAmount);
+    return currency == AppCurrency.idr
+        ? val.round().toString()
+        : val.toStringAsFixed(2);
+  }
 
   bool get isId => language == AppLanguage.id;
 
@@ -284,6 +312,76 @@ class AppStrings {
   String get intervalMonthHint => t('+Bln', '+Mo');
   String get initialBaselineTitle => t('Acuan Awal', 'Initial Baseline');
 
+  // Offline Photo Receipt & OCR Auto-Fill
+  String get scanReceiptTitle => t('Scan Foto Nota Otomatis', 'Auto-Scan Receipt Photo');
+  String get scanReceiptSubtitle => t(
+        'Foto nota bengkel -> otomatis isi item, biaya, bengkel & KM (100% offline)',
+        'Snap workshop receipt -> auto-fills service, cost, shop & KM (100% offline)',
+      );
+  String get pickFromCamera => t('Kamera', 'Camera');
+  String get pickFromGallery => t('Galeri', 'Gallery');
+  String get smartPasteReceipt => t('Tempel Teks Nota', 'Paste Receipt Text');
+  String get scanningReceipt => t('Membaca teks nota secara offline...', 'Scanning receipt offline...');
+  String get scanAutoFilled => t(
+        'Data servis berhasil diekstrak otomatis dari nota! Silakan cek sebelum simpan.',
+        'Service details auto-filled from receipt! Please review before saving.',
+      );
+  String get scanNoTextFound => t(
+        'Foto nota terlampir, tapi teks kurang terbaca. Silakan lengkapi manual.',
+        'Receipt photo attached, but text was unclear. Please fill in manually.',
+      );
+  String get scanWebHint => t(
+        'Foto nota terlampir! OCR otomatis berjalan native di Android/iOS. Di Chrome, gunakan "Tempel Teks Nota" untuk uji parser otomatis.',
+        'Receipt photo attached! Native OCR runs on Android/iOS. On Chrome, use "Paste Receipt Text" to try auto-parsing.',
+      );
+  String get pasteReceiptDialogTitle => t('Tempel Teks Nota Bengkel', 'Paste Workshop Receipt Text');
+  String get pasteReceiptHint => t(
+        'Tempel teks nota/struk bengkel di sini, atau klik "Isi Contoh Nota" untuk mencoba...',
+        'Paste workshop receipt text here, or tap "Load Sample" to try...',
+      );
+  String get loadSampleReceipt => t('Isi Contoh Nota', 'Load Sample');
+  String get parseReceiptNow => t('Ekstrak Otomatis', 'Auto-Fill Form');
+  String get receiptAttachedBadge => t('Foto Nota', 'Receipt');
+  String get viewReceiptPhoto => t('Lihat Foto Nota', 'View Receipt Photo');
+  String get removePhoto => t('Hapus Foto', 'Remove Photo');
+
+  // Top Sparepart Brands Dashboard
+  String get topBrandsTitle => t('Merek Sparepart Favorit', 'Top Sparepart Brands');
+  String get topBrandsSubtitle => t(
+        'Merek oli & sparepart yang paling sering dipakai',
+        'Most frequently used oil & sparepart brands',
+      );
+  String get partBrandLabel => t('Merek Sparepart / Oli (Opsional)', 'Sparepart / Oil Brand (Optional)');
+  String get partBrandHint => t('Contoh: Motul, AHM Oil, Nissin, Michelin', 'e.g. Motul, Shell, Brembo, Michelin');
+  String get brandUsedSuffix => t('x dipakai', 'x used');
+  String get topBrandBadge => t('Favorit #1', '#1 Favorite');
+  String get scopeActiveVehicle => t('Unit Ini', 'This Unit');
+  String get scopeAllGarage => t('Semua Garasi', 'All Garage');
+  String get noBrandDataYet => t(
+        'Isi merek sparepart saat mencatat servis untuk melihat peringkat merek andalan Anda.',
+        'Add a sparepart brand when logging services to see your top brands ranking.',
+      );
+  String get exchangeRateLabel => t('Kurs Konversi (1 USD = Rp)', 'Exchange Rate (1 USD = IDR)');
+
+  // Local Push Notifications (Offline)
+  String get notifSectionTitle => t('Push Notification Pengingat', 'Reminder Push Notifications');
+  String get notifToggleLabel => t('Aktifkan Notifikasi Pengingat', 'Enable Reminder Notifications');
+  String get notifToggleSubtitle => t(
+        'Otomatis ingatkan H-14 & H-3 Pajak STNK serta H-3 jadwal servis (100% offline)',
+        'Auto-alerts 14d & 3d before STNK tax and 3d before scheduled service (100% offline)',
+      );
+  String get testNotificationBtn => t('Tes Kirim Push Notification', 'Test Push Notification');
+  String get notifScheduledSuffix => t('pengingat terjadwal', 'reminders scheduled');
+  String get notifSentNative => t(
+        'Push notification terkirim ke status bar HP Anda!',
+        'Push notification sent to your device!',
+      );
+  String get notifPreviewHint => t(
+        'Preview Push Notification (mode native aktif otomatis saat di-install di Android/iOS)',
+        'Push Notification preview (native OS alerts run when installed on Android/iOS)',
+      );
+  String get notifNowLabel => t('sekarang', 'now');
+
   // Validation
   String get requiredField => t('Wajib diisi', 'Required');
   String get invalidNumber => t('Masukkan angka yang valid', 'Enter a valid number');
@@ -303,15 +401,19 @@ class AppStrings {
     return fixed;
   }
 
-  String formatCurrency(double amount, {bool allowDecimalsForUsd = true}) {
+  String formatCurrency(double amountInBaseIdr, {bool allowDecimalsForUsd = true}) {
     if (currency == AppCurrency.idr) {
-      final rounded = amount.round();
+      final rounded = amountInBaseIdr.round();
       final prefix = rounded < 0 ? '-Rp ' : 'Rp ';
       return '$prefix${_groupInt(rounded.abs(), '.')}';
     } else {
-      final absVal = amount.abs();
-      final prefix = amount < 0 ? '-\$' : '\$';
-      if (!allowDecimalsForUsd || absVal >= 1000) {
+      final converted = fromBaseIdr(amountInBaseIdr);
+      final absVal = converted.abs();
+      final prefix = converted < 0 ? '-\$' : '\$';
+      if (!allowDecimalsForUsd && absVal >= 100) {
+        return '$prefix${_groupInt(absVal.round(), ',')}';
+      }
+      if (absVal >= 1000) {
         return '$prefix${_groupInt(absVal.round(), ',')}';
       }
       final parts = absVal.toStringAsFixed(2).split('.');

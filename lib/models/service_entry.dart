@@ -15,6 +15,8 @@ class ServiceEntry {
     this.nextIntervalKm = 0,
     this.nextIntervalMonths = 0,
     this.notes = '',
+    this.partBrand = '',
+    this.receiptImageBase64,
   });
 
   final String id;
@@ -28,6 +30,11 @@ class ServiceEntry {
   final int nextIntervalKm;
   final int nextIntervalMonths;
   final String notes;
+  final String partBrand;
+  final String? receiptImageBase64;
+
+  bool get hasReceiptPhoto =>
+      receiptImageBase64 != null && receiptImageBase64!.isNotEmpty;
 
   int? get nextDueKm => nextIntervalKm > 0 ? odometerKm + nextIntervalKm : null;
 
@@ -76,6 +83,8 @@ class ServiceEntry {
       'nextIntervalKm': nextIntervalKm,
       'nextIntervalMonths': nextIntervalMonths,
       'notes': notes,
+      'partBrand': partBrand,
+      if (receiptImageBase64 != null) 'receiptImageBase64': receiptImageBase64,
     };
   }
 
@@ -95,6 +104,8 @@ class ServiceEntry {
       nextIntervalKm: (json['nextIntervalKm'] as num?)?.toInt() ?? 0,
       nextIntervalMonths: (json['nextIntervalMonths'] as num?)?.toInt() ?? 0,
       notes: (json['notes'] as String?) ?? '',
+      partBrand: (json['partBrand'] as String?) ?? '',
+      receiptImageBase64: json['receiptImageBase64'] as String?,
     );
   }
 }

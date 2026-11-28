@@ -131,18 +131,20 @@ class _FirstRunSetupScreenState extends State<FirstRunSetupScreen> {
               Row(
                 children: [
                   Container(
-                    width: 38,
-                    height: 38,
+                    width: 42,
+                    height: 42,
+                    padding: const EdgeInsets.all(2),
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.sky, AppColors.emerald],
-                      ),
-                      borderRadius: BorderRadius.circular(11),
+                      color: AppColors.surfaceElevated,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.border),
                     ),
-                    child: const Icon(
-                      Icons.speed_rounded,
-                      color: Color(0xFF04131E),
-                      size: 22,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(9),
+                      child: Image.asset(
+                        'assets/icon/app_logo_mark.png',
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 10),
@@ -150,12 +152,23 @@ class _FirstRunSetupScreenState extends State<FirstRunSetupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          s.appTitle,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            fontWeight: FontWeight.w900,
-                            color: AppColors.textPrimary,
+                        const Text.rich(
+                          TextSpan(
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: -0.3,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: 'Garage',
+                                style: TextStyle(color: AppColors.brandNavy),
+                              ),
+                              TextSpan(
+                                text: 'Log',
+                                style: TextStyle(color: AppColors.racingOrange),
+                              ),
+                            ],
                           ),
                         ),
                         Text(
@@ -163,7 +176,7 @@ class _FirstRunSetupScreenState extends State<FirstRunSetupScreen> {
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.emerald,
+                            color: AppColors.sky,
                           ),
                         ),
                       ],
@@ -172,14 +185,14 @@ class _FirstRunSetupScreenState extends State<FirstRunSetupScreen> {
                   _quickPill(
                     key: const Key('setup_currency_toggle'),
                     label: ctrl.currency == AppCurrency.idr ? 'Rp' : '\$',
-                    accent: AppColors.emerald,
+                    accent: AppColors.sky,
                     onTap: ctrl.toggleCurrency,
                   ),
                   const SizedBox(width: 6),
                   _quickPill(
                     key: const Key('setup_lang_toggle'),
                     label: ctrl.language == AppLanguage.id ? 'ID' : 'EN',
-                    accent: AppColors.sky,
+                    accent: AppColors.racingOrange,
                     onTap: ctrl.toggleLanguage,
                   ),
                 ],
@@ -187,34 +200,46 @@ class _FirstRunSetupScreenState extends State<FirstRunSetupScreen> {
               const SizedBox(height: 18),
               // Welcome Hero Card
               Container(
-                padding: const EdgeInsets.all(16),
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF17253B), Color(0xFF0F1929)],
-                  ),
+                  gradient: AppColors.carbonHeroGradient,
                   borderRadius: BorderRadius.circular(18),
-                  border: Border.all(color: AppColors.sky.withOpacity(0.4)),
+                  border: Border.all(
+                    color: AppColors.racingOrange.withOpacity(0.45),
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      s.setupWelcomeTitle,
-                      style: const TextStyle(
-                        fontSize: 19,
-                        fontWeight: FontWeight.w900,
-                        color: AppColors.textPrimary,
+                    Container(
+                      height: 4,
+                      decoration: const BoxDecoration(
+                        gradient: AppColors.brandStripeGradient,
                       ),
                     ),
-                    const SizedBox(height: 6),
-                    Text(
-                      s.setupWelcomeSubtitle,
-                      style: const TextStyle(
-                        fontSize: 12.5,
-                        height: 1.4,
-                        color: AppColors.textSecondary,
+                    Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            s.setupWelcomeTitle,
+                            style: const TextStyle(
+                              fontSize: 19,
+                              fontWeight: FontWeight.w900,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            s.setupWelcomeSubtitle,
+                            style: const TextStyle(
+                              fontSize: 12.5,
+                              height: 1.4,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -480,8 +505,8 @@ class _FirstRunSetupScreenState extends State<FirstRunSetupScreen> {
                   key: const Key('setup_submit_btn'),
                   onPressed: _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.emerald,
-                    foregroundColor: const Color(0xFF022016),
+                    backgroundColor: AppColors.racingOrange,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 15),
                   ),
                   icon: const Icon(Icons.rocket_launch_rounded, size: 19),
@@ -508,7 +533,7 @@ class _FirstRunSetupScreenState extends State<FirstRunSetupScreen> {
   Widget _sectionTitle(String title, IconData icon) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColors.sky),
+        Icon(icon, size: 18, color: AppColors.racingOrange),
         const SizedBox(width: 8),
         Text(
           title,
@@ -547,11 +572,11 @@ class _FirstRunSetupScreenState extends State<FirstRunSetupScreen> {
         padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 10),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.sky.withOpacity(0.16)
+              ? AppColors.racingOrange.withOpacity(0.18)
               : AppColors.surfaceElevated,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AppColors.sky : AppColors.border,
+            color: selected ? AppColors.racingOrange : AppColors.border,
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -561,14 +586,15 @@ class _FirstRunSetupScreenState extends State<FirstRunSetupScreen> {
             Icon(
               icon,
               size: 19,
-              color: selected ? AppColors.sky : AppColors.textSecondary,
+              color: selected ? AppColors.racingOrange : AppColors.textSecondary,
             ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                color: selected ? AppColors.sky : AppColors.textSecondary,
+                color:
+                    selected ? AppColors.racingOrange : AppColors.textSecondary,
               ),
             ),
           ],

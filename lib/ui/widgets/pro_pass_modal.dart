@@ -62,24 +62,26 @@ class _ProPassSheet extends StatelessWidget {
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  AppColors.amber.withOpacity(0.22),
-                  AppColors.sky.withOpacity(0.14),
+                  AppColors.racingOrange.withOpacity(0.24),
+                  AppColors.racingRed.withOpacity(0.14),
                 ],
               ),
               borderRadius: BorderRadius.circular(18),
-              border: Border.all(color: AppColors.amber.withOpacity(0.45)),
+              border: Border.all(
+                color: AppColors.racingOrange.withOpacity(0.55),
+              ),
             ),
             child: Row(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppColors.amber.withOpacity(0.2),
+                    gradient: AppColors.racingGradient,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: const Icon(
                     Icons.workspace_premium_rounded,
-                    color: AppColors.amber,
+                    color: Colors.white,
                     size: 28,
                   ),
                 ),
@@ -154,8 +156,8 @@ class _ProPassSheet extends StatelessWidget {
                   );
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.amber,
-                  foregroundColor: const Color(0xFF1F1300),
+                  backgroundColor: AppColors.racingOrange,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                 ),
                 child: Text('${s.proBuyCta} • ${s.proPrice}'),

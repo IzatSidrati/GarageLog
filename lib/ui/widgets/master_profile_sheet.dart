@@ -29,6 +29,7 @@ class _MasterProfileSheet extends StatefulWidget {
 class _MasterProfileSheetState extends State<_MasterProfileSheet> {
   late final TextEditingController _garageNameCtrl;
   late final TextEditingController _workshopCtrl;
+  late final TextEditingController _usdRateCtrl;
   late final TextEditingController _oilKmCtrl;
   late final TextEditingController _oilMoCtrl;
   late final TextEditingController _routineKmCtrl;
@@ -59,6 +60,7 @@ class _MasterProfileSheetState extends State<_MasterProfileSheet> {
     final p = widget.controller.masterProfile;
     _garageNameCtrl = TextEditingController(text: p.garageName);
     _workshopCtrl = TextEditingController(text: p.defaultWorkshop);
+    _usdRateCtrl = TextEditingController(text: p.usdRateIdr.round().toString());
     _defaultFuel = p.defaultFuelType;
     _oilKmCtrl = TextEditingController(text: p.oilIntervalKm.toString());
     _oilMoCtrl = TextEditingController(text: p.oilIntervalMonths.toString());
@@ -75,6 +77,7 @@ class _MasterProfileSheetState extends State<_MasterProfileSheet> {
   void dispose() {
     _garageNameCtrl.dispose();
     _workshopCtrl.dispose();
+    _usdRateCtrl.dispose();
     _oilKmCtrl.dispose();
     _oilMoCtrl.dispose();
     _routineKmCtrl.dispose();
@@ -139,6 +142,17 @@ class _MasterProfileSheetState extends State<_MasterProfileSheet> {
               decoration: InputDecoration(
                 labelText: s.defaultWorkshopLabel,
                 prefixIcon: const Icon(Icons.storefront_outlined, size: 20),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _usdRateCtrl,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: s.exchangeRateLabel,
+                hintText: '16000',
+                prefixIcon:
+                    const Icon(Icons.currency_exchange_rounded, size: 20),
               ),
             ),
             const SizedBox(height: 12),
@@ -256,10 +270,14 @@ class _MasterProfileSheetState extends State<_MasterProfileSheet> {
 
   Future<void> _save() async {
     final current = widget.controller.masterProfile;
+    final parsedRate = double.tryParse(_usdRateCtrl.text.trim());
     await widget.controller.updateMasterProfile(
       current.copyWith(
         garageName: _garageNameCtrl.text.trim(),
         defaultWorkshop: _workshopCtrl.text.trim(),
+        usdRateIdr: (parsedRate != null && parsedRate > 0)
+            ? parsedRate
+            : current.usdRateIdr,
         defaultFuelType: _defaultFuel,
         oilIntervalKm:
             int.tryParse(_oilKmCtrl.text.trim()) ?? current.oilIntervalKm,

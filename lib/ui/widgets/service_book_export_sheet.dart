@@ -111,7 +111,7 @@ Future<void> showServiceBookExportSheet({
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.emerald,
-                      foregroundColor: const Color(0xFF022016),
+                      foregroundColor: Colors.white,
                     ),
                     icon: const Icon(Icons.copy_all_rounded),
                     label: Text(s.copyToClipboard),

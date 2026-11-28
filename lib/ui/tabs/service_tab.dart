@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 import '../../l10n/app_strings.dart';
@@ -47,12 +49,12 @@ class ServiceTab extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.sky.withOpacity(0.2),
+                AppColors.racingOrange.withOpacity(0.18),
                 AppColors.surface,
               ],
             ),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.sky.withOpacity(0.45)),
+            border: Border.all(color: AppColors.racingOrange.withOpacity(0.45)),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,12 +64,12 @@ class ServiceTab extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.sky.withOpacity(0.18),
+                      color: AppColors.racingOrange.withOpacity(0.18),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.menu_book_rounded,
-                      color: AppColors.sky,
+                      color: AppColors.racingOrange,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -297,6 +299,28 @@ class ServiceTab extends StatelessWidget {
                                   color: AppColors.textSecondary,
                                 ),
                               ),
+                              if (srv.partBrand.isNotEmpty) ...[
+                                const SizedBox(height: 4),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 7,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.racingOrange
+                                        .withOpacity(0.12),
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  child: Text(
+                                    srv.partBrand,
+                                    style: const TextStyle(
+                                      fontSize: 10.5,
+                                      fontWeight: FontWeight.w700,
+                                      color: AppColors.racingOrange,
+                                    ),
+                                  ),
+                                ),
+                              ],
                               if (srv.workshop.isNotEmpty) ...[
                                 const SizedBox(height: 2),
                                 Text(
@@ -382,12 +406,112 @@ class ServiceTab extends StatelessWidget {
                         ),
                       ),
                     ],
+                    if (srv.hasReceiptPhoto) ...[
+                      const SizedBox(height: 10),
+                      InkWell(
+                        onTap: () => _showReceiptPreview(context, srv, s),
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.racingOrange.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                              color: AppColors.racingOrange.withOpacity(0.35),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(
+                                Icons.receipt_long_rounded,
+                                size: 15,
+                                color: AppColors.racingOrange,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                s.viewReceiptPhoto,
+                                style: const TextStyle(
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.racingOrange,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),
             );
           }),
       ],
+    );
+  }
+
+  Future<void> _showReceiptPreview(
+    BuildContext context,
+    ServiceEntry srv,
+    AppStrings s,
+  ) async {
+    if (!srv.hasReceiptPhoto) return;
+    final bytes = base64Decode(srv.receiptImageBase64!);
+
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.receipt_long_rounded,
+                    color: AppColors.racingOrange,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      srv.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14.5,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    icon: const Icon(Icons.close_rounded),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 420),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: InteractiveViewer(
+                    child: Image.memory(bytes, fit: BoxFit.contain),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

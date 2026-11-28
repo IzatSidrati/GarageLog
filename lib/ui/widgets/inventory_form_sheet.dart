@@ -60,7 +60,7 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
     );
     _priceController = TextEditingController(
       text: item != null && item.unitPrice > 0
-          ? item.unitPrice.toStringAsFixed(0)
+          ? widget.controller.strings.formatEditableAmount(item.unitPrice)
           : '',
     );
     _locationController = TextEditingController(text: item?.location ?? '');
@@ -310,12 +310,14 @@ class _InventoryFormSheetState extends State<_InventoryFormSheet> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    final s = widget.controller.strings;
     final qty = int.parse(_qtyController.text.trim());
     final minQty = int.tryParse(_minQtyController.text.trim()) ?? 1;
-    final price = double.tryParse(
+    final rawPrice = double.tryParse(
           _priceController.text.trim().replaceAll(',', '.'),
         ) ??
         0;
+    final price = s.toBaseIdr(rawPrice);
 
     final existing = widget.editingItem;
     if (existing != null) {

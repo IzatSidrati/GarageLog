@@ -117,7 +117,7 @@ class _QuickFuelSheetState extends State<_QuickFuelSheet> {
       final delta = odoVal - _previousOdo!;
       estKmPerL = delta / litersVal;
       if (costVal != null && costVal > 0) {
-        estCostPerKm = costVal / delta;
+        estCostPerKm = s.toBaseIdr(costVal) / delta;
       }
     }
 
@@ -151,12 +151,12 @@ class _QuickFuelSheetState extends State<_QuickFuelSheet> {
                   Container(
                     padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(
-                      color: AppColors.emerald.withOpacity(0.16),
+                      gradient: AppColors.racingGradient,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Icon(
                       Icons.local_gas_station_rounded,
-                      color: AppColors.emerald,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -355,8 +355,8 @@ class _QuickFuelSheetState extends State<_QuickFuelSheet> {
                 child: ElevatedButton.icon(
                   onPressed: _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.emerald,
-                    foregroundColor: const Color(0xFF022016),
+                    backgroundColor: AppColors.racingOrange,
+                    foregroundColor: Colors.white,
                   ),
                   icon: const Icon(Icons.check_circle_outline_rounded),
                   label: Text(s.saveFuel),
@@ -371,9 +371,10 @@ class _QuickFuelSheetState extends State<_QuickFuelSheet> {
 
   Future<void> _submit() async {
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    final s = widget.controller.strings;
     final odo = int.parse(_odoController.text.trim());
     final liters = _parseNum(_litersController.text)!;
-    final cost = _parseNum(_costController.text)!;
+    final cost = s.toBaseIdr(_parseNum(_costController.text)!);
 
     await widget.controller.addFuelEntry(
       vehicleId: widget.vehicle.id,

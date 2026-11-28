@@ -8,6 +8,7 @@ import 'tabs/dashboard_tab.dart';
 import 'tabs/fuel_tab.dart';
 import 'tabs/garage_tab.dart';
 import 'tabs/service_tab.dart';
+import 'widgets/push_notification_banner.dart';
 
 class GarageShell extends StatefulWidget {
   const GarageShell({
@@ -35,7 +36,7 @@ class _GarageShellState extends State<GarageShell> {
         if (!ctrl.isLoaded) {
           return const Scaffold(
             body: Center(
-              child: CircularProgressIndicator(color: AppColors.sky),
+              child: CircularProgressIndicator(color: AppColors.racingOrange),
             ),
           );
         }
@@ -59,21 +60,26 @@ class _GarageShellState extends State<GarageShell> {
           appBar: AppBar(
             toolbarHeight: 62,
             titleSpacing: 16,
+            shape: const Border(
+              bottom: BorderSide(color: AppColors.border, width: 1),
+            ),
             title: Row(
               children: [
                 Container(
-                  width: 34,
-                  height: 34,
+                  width: 38,
+                  height: 38,
+                  padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.sky, AppColors.emerald],
-                    ),
-                    borderRadius: BorderRadius.circular(10),
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(11),
+                    border: Border.all(color: AppColors.border),
                   ),
-                  child: const Icon(
-                    Icons.speed_rounded,
-                    color: Color(0xFF04131E),
-                    size: 20,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      'assets/icon/app_logo_mark.png',
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -84,12 +90,24 @@ class _GarageShellState extends State<GarageShell> {
                     children: [
                       Row(
                         children: [
-                          Text(
-                            s.appTitle,
-                            style: const TextStyle(
-                              fontSize: 16.5,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: -0.2,
+                          const Text.rich(
+                            TextSpan(
+                              style: TextStyle(
+                                fontSize: 17.5,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: -0.3,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: 'Garage',
+                                  style: TextStyle(color: AppColors.brandNavy),
+                                ),
+                                TextSpan(
+                                  text: 'Log',
+                                  style:
+                                      TextStyle(color: AppColors.racingOrange),
+                                ),
+                              ],
                             ),
                           ),
                           if (ctrl.isProUnlocked) ...[
@@ -126,7 +144,7 @@ class _GarageShellState extends State<GarageShell> {
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 10.5,
-                          color: AppColors.emerald,
+                          color: AppColors.sky,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -136,12 +154,41 @@ class _GarageShellState extends State<GarageShell> {
               ],
             ),
             actions: [
+              // Quick Push Notification Test / Alert Preview button
+              IconButton(
+                key: const Key('appbar_test_notif_btn'),
+                tooltip: s.testNotificationBtn,
+                visualDensity: VisualDensity.compact,
+                onPressed: () async {
+                  final res = await ctrl.triggerTestReminderNotification();
+                  if (context.mounted) {
+                    showInAppPushBanner(
+                      context: context,
+                      title: res.title,
+                      body: res.body,
+                      timeLabel: s.notifNowLabel,
+                      footerHint: res.nativeDelivered
+                          ? s.notifSentNative
+                          : s.notifPreviewHint,
+                    );
+                  }
+                },
+                icon: Icon(
+                  ctrl.notificationsEnabled
+                      ? Icons.notifications_active_outlined
+                      : Icons.notifications_off_outlined,
+                  color: ctrl.notificationsEnabled
+                      ? AppColors.racingOrange
+                      : AppColors.textMuted,
+                  size: 21,
+                ),
+              ),
               // Quick Currency Toggle (Rp / $)
               _QuickTogglePill(
                 key: const Key('currency_toggle_button'),
                 label: ctrl.currency == AppCurrency.idr ? 'Rp' : '\$',
                 onTap: ctrl.toggleCurrency,
-                accent: AppColors.emerald,
+                accent: AppColors.sky,
               ),
               const SizedBox(width: 6),
               // Quick Language Toggle (ID / EN)
@@ -149,7 +196,7 @@ class _GarageShellState extends State<GarageShell> {
                 key: const Key('lang_toggle_button'),
                 label: ctrl.language == AppLanguage.id ? 'ID' : 'EN',
                 onTap: ctrl.toggleLanguage,
-                accent: AppColors.sky,
+                accent: AppColors.racingOrange,
               ),
               const SizedBox(width: 12),
             ],
@@ -169,17 +216,20 @@ class _GarageShellState extends State<GarageShell> {
                           return ChoiceChip(
                             label: Text('${v.name} (${v.plateNumber})'),
                             selected: active,
-                            selectedColor: AppColors.sky.withOpacity(0.22),
+                            selectedColor:
+                                AppColors.racingOrange.withOpacity(0.22),
                             labelStyle: TextStyle(
                               fontSize: 11.5,
                               fontWeight:
                                   active ? FontWeight.w700 : FontWeight.w500,
                               color: active
-                                  ? AppColors.sky
+                                  ? AppColors.racingOrange
                                   : AppColors.textSecondary,
                             ),
                             side: BorderSide(
-                              color: active ? AppColors.sky : AppColors.border,
+                              color: active
+                                  ? AppColors.racingOrange
+                                  : AppColors.border,
                             ),
                             onSelected: (_) => ctrl.selectVehicle(v.id),
                           );
@@ -203,15 +253,17 @@ class _GarageShellState extends State<GarageShell> {
             child: NavigationBar(
               selectedIndex: _tabIndex,
               backgroundColor: AppColors.surface,
-              indicatorColor: AppColors.sky.withOpacity(0.18),
+              indicatorColor: AppColors.racingOrange.withOpacity(0.2),
               surfaceTintColor: Colors.transparent,
               height: 66,
               onDestinationSelected: (i) => setState(() => _tabIndex = i),
               destinations: [
                 NavigationDestination(
                   icon: const Icon(Icons.dashboard_outlined),
-                  selectedIcon:
-                      const Icon(Icons.dashboard_rounded, color: AppColors.sky),
+                  selectedIcon: const Icon(
+                    Icons.dashboard_rounded,
+                    color: AppColors.racingOrange,
+                  ),
                   label: s.navDashboard,
                 ),
                 NavigationDestination(
@@ -224,14 +276,18 @@ class _GarageShellState extends State<GarageShell> {
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.build_outlined),
-                  selectedIcon:
-                      const Icon(Icons.build_rounded, color: AppColors.amber),
+                  selectedIcon: const Icon(
+                    Icons.build_rounded,
+                    color: AppColors.sky,
+                  ),
                   label: s.navService,
                 ),
                 NavigationDestination(
                   icon: const Icon(Icons.garage_outlined),
-                  selectedIcon:
-                      const Icon(Icons.garage_rounded, color: AppColors.sky),
+                  selectedIcon: const Icon(
+                    Icons.garage_rounded,
+                    color: AppColors.racingOrange,
+                  ),
                   label: s.navGarage,
                 ),
               ],

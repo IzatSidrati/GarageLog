@@ -34,7 +34,7 @@ class FuelTrendChart extends StatelessWidget {
           Row(
             children: [
               const Icon(Icons.show_chart_rounded,
-                  color: AppColors.sky, size: 20),
+                  color: AppColors.racingOrange, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(

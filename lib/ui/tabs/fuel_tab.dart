@@ -41,24 +41,24 @@ class FuelTab extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                AppColors.emerald.withOpacity(0.2),
+                AppColors.racingOrange.withOpacity(0.22),
                 AppColors.surface,
               ],
             ),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AppColors.emerald.withOpacity(0.45)),
+            border: Border.all(color: AppColors.racingOrange.withOpacity(0.5)),
           ),
           child: Row(
             children: [
               Container(
                 padding: const EdgeInsets.all(11),
                 decoration: BoxDecoration(
-                  color: AppColors.emerald.withOpacity(0.18),
+                  gradient: AppColors.racingGradient,
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: const Icon(
                   Icons.bolt_rounded,
-                  color: AppColors.emerald,
+                  color: Colors.white,
                   size: 24,
                 ),
               ),
@@ -104,8 +104,8 @@ class FuelTab extends StatelessWidget {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.emerald,
-                  foregroundColor: const Color(0xFF022016),
+                  backgroundColor: AppColors.racingOrange,
+                  foregroundColor: Colors.white,
                   padding:
                       const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 ),

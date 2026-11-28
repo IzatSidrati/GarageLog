@@ -9,6 +9,7 @@ import '../widgets/backup_restore_sheet.dart';
 import '../widgets/inventory_form_sheet.dart';
 import '../widgets/master_profile_sheet.dart';
 import '../widgets/pro_pass_modal.dart';
+import '../widgets/push_notification_banner.dart';
 import '../widgets/vehicle_form_sheet.dart';
 
 class GarageTab extends StatefulWidget {
@@ -55,7 +56,8 @@ class _GarageTabState extends State<GarageTab> {
                         AppColors.surface,
                       ]
                     : [
-                        AppColors.amber.withOpacity(0.2),
+                        AppColors.racingOrange.withOpacity(0.24),
+                        AppColors.racingRed.withOpacity(0.12),
                         AppColors.surface,
                       ],
               ),
@@ -63,14 +65,14 @@ class _GarageTabState extends State<GarageTab> {
               border: Border.all(
                 color: isPro
                     ? AppColors.emerald.withOpacity(0.5)
-                    : AppColors.amber.withOpacity(0.5),
+                    : AppColors.racingOrange.withOpacity(0.55),
               ),
             ),
             child: Row(
               children: [
                 Icon(
                   Icons.workspace_premium_rounded,
-                  color: isPro ? AppColors.emerald : AppColors.amber,
+                  color: isPro ? AppColors.emerald : AppColors.racingOrange,
                   size: 28,
                 ),
                 const SizedBox(width: 12),
@@ -197,6 +199,91 @@ class _GarageTabState extends State<GarageTab> {
                 ],
               ),
               const Divider(height: 22),
+              Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Wrap(
+                          spacing: 6,
+                          runSpacing: 4,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          children: [
+                            Text(
+                              s.notifToggleLabel,
+                              style: const TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 7,
+                                vertical: 2,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.racingOrange.withOpacity(0.14),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${ctrl.buildUpcomingReminders().length} ${s.notifScheduledSuffix}',
+                                style: const TextStyle(
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppColors.racingOrange,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          s.notifToggleSubtitle,
+                          style: const TextStyle(
+                            fontSize: 11.5,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch.adaptive(
+                    value: ctrl.notificationsEnabled,
+                    activeColor: AppColors.racingOrange,
+                    onChanged: ctrl.setNotificationsEnabled,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  key: const Key('test_notification_btn'),
+                  onPressed: () async {
+                    final res = await ctrl.triggerTestReminderNotification();
+                    if (context.mounted) {
+                      showInAppPushBanner(
+                        context: context,
+                        title: res.title,
+                        body: res.body,
+                        timeLabel: s.notifNowLabel,
+                        footerHint: res.nativeDelivered
+                            ? s.notifSentNative
+                            : s.notifPreviewHint,
+                      );
+                    }
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.brandNavy,
+                    foregroundColor: Colors.white,
+                  ),
+                  icon: const Icon(Icons.notifications_active_rounded, size: 18),
+                  label: Text(s.testNotificationBtn),
+                ),
+              ),
+              const Divider(height: 22),
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
@@ -310,7 +397,7 @@ class _GarageTabState extends State<GarageTab> {
                 color: AppColors.surface,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: selected ? AppColors.sky : AppColors.border,
+                  color: selected ? AppColors.racingOrange : AppColors.border,
                   width: selected ? 1.5 : 1,
                 ),
               ),
@@ -323,9 +410,9 @@ class _GarageTabState extends State<GarageTab> {
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
                           color: (selected
-                                  ? AppColors.sky
+                                  ? AppColors.racingOrange
                                   : AppColors.textSecondary)
-                              .withOpacity(0.15),
+                              .withOpacity(0.16),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -333,7 +420,7 @@ class _GarageTabState extends State<GarageTab> {
                               ? Icons.two_wheeler_rounded
                               : Icons.directions_car_rounded,
                           color: selected
-                              ? AppColors.sky
+                              ? AppColors.racingOrange
                               : AppColors.textSecondary,
                         ),
                       ),
@@ -361,7 +448,8 @@ class _GarageTabState extends State<GarageTab> {
                                       vertical: 3,
                                     ),
                                     decoration: BoxDecoration(
-                                      color: AppColors.sky.withOpacity(0.18),
+                                      color: AppColors.racingOrange
+                                          .withOpacity(0.2),
                                       borderRadius: BorderRadius.circular(20),
                                     ),
                                     child: Text(
@@ -369,7 +457,7 @@ class _GarageTabState extends State<GarageTab> {
                                       style: const TextStyle(
                                         fontSize: 11,
                                         fontWeight: FontWeight.w700,
-                                        color: AppColors.sky,
+                                        color: AppColors.racingOrange,
                                       ),
                                     ),
                                   ),
@@ -488,7 +576,7 @@ class _GarageTabState extends State<GarageTab> {
             onPressed: () => _handleAddInventory(context),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.emerald,
-              foregroundColor: const Color(0xFF022016),
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             ),
             icon: Icon(

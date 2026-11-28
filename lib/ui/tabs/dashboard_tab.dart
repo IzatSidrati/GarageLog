@@ -8,6 +8,7 @@ import '../../state/garage_controller.dart';
 import '../../theme/app_theme.dart';
 import '../widgets/add_service_sheet.dart';
 import '../widgets/quick_fuel_sheet.dart';
+import '../widgets/top_brands_card.dart';
 import '../widgets/vehicle_form_sheet.dart';
 
 class DashboardTab extends StatelessWidget {
@@ -71,8 +72,8 @@ class DashboardTab extends StatelessWidget {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.emerald,
-                  foregroundColor: const Color(0xFF022016),
+                  backgroundColor: AppColors.racingOrange,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 13),
                 ),
                 icon: const Icon(Icons.local_gas_station_rounded, size: 18),
@@ -100,8 +101,8 @@ class DashboardTab extends StatelessWidget {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.sky,
-                  foregroundColor: const Color(0xFF04131E),
+                  backgroundColor: AppColors.brandNavy,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 13),
                 ),
                 icon: const Icon(Icons.build_rounded, size: 18),
@@ -147,7 +148,7 @@ class DashboardTab extends StatelessWidget {
         Row(
           children: [
             const Icon(Icons.health_and_safety_rounded,
-                color: AppColors.sky, size: 20),
+                color: AppColors.racingOrange, size: 20),
             const SizedBox(width: 8),
             Text(
               s.vehicleHealthTitle,
@@ -189,6 +190,23 @@ class DashboardTab extends StatelessWidget {
               },
             ),
           ),
+        ),
+        const SizedBox(height: 12),
+        TopBrandsCard(
+          controller: controller,
+          activeVehicle: vehicle,
+          onQuickLogService: () async {
+            final saved = await showAddServiceSheet(
+              context: context,
+              controller: controller,
+              vehicle: vehicle,
+            );
+            if (saved && context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(s.serviceSaved)),
+              );
+            }
+          },
         ),
       ],
     );
@@ -260,154 +278,185 @@ class _VehicleHeroCard extends StatelessWidget {
     final isMoto = vehicle.type == VehicleType.motorcycle;
 
     return Container(
-      padding: const EdgeInsets.all(18),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF17253B),
-            Color(0xFF0F1929),
-          ],
-        ),
+        gradient: AppColors.carbonHeroGradient,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.sky.withOpacity(0.35)),
+        border: Border.all(color: AppColors.racingOrange.withOpacity(0.45)),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.racingOrange.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: AppColors.sky.withOpacity(0.16),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  isMoto
-                      ? Icons.two_wheeler_rounded
-                      : Icons.directions_car_rounded,
-                  color: AppColors.sky,
-                  size: 24,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          // Dual-Tone Logo Brand Accent Stripe (Deep Navy -> Vivid Orange)
+          Container(
+            height: 4,
+            decoration: const BoxDecoration(
+              gradient: AppColors.brandStripeGradient,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      vehicle.name,
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: AppColors.brandNavy,
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.brandNavy.withOpacity(0.22),
+                            blurRadius: 10,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        isMoto
+                            ? Icons.two_wheeler_rounded
+                            : Icons.directions_car_rounded,
+                        color: Colors.white,
+                        size: 24,
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.background,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: AppColors.border),
-                          ),
-                          child: Text(
-                            vehicle.plateNumber,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            vehicle.name,
                             style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.8,
+                              fontSize: 17.5,
+                              fontWeight: FontWeight.w900,
                               color: AppColors.textPrimary,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          isMoto ? strings.motorcycle : strings.car,
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppColors.textSecondary,
+                          const SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.background,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(
+                                    color: AppColors.racingOrange
+                                        .withOpacity(0.45),
+                                  ),
+                                ),
+                                child: Text(
+                                  vehicle.plateNumber,
+                                  style: const TextStyle(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.9,
+                                    color: AppColors.textPrimary,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                isMoto ? strings.motorcycle : strings.car,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: onEditVehicle,
+                      icon: const Icon(
+                        Icons.tune_rounded,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      ),
+                      tooltip: strings.editVehicle,
                     ),
                   ],
                 ),
-              ),
-              IconButton(
-                onPressed: onEditVehicle,
-                icon: const Icon(
-                  Icons.tune_rounded,
-                  color: AppColors.textSecondary,
-                  size: 20,
-                ),
-                tooltip: strings.editVehicle,
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.background.withOpacity(0.75),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: AppColors.border),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                const SizedBox(height: 16),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceElevated,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: AppColors.border),
+                  ),
+                  child: Row(
                     children: [
-                      Text(
-                        strings.currentOdometer.toUpperCase(),
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          letterSpacing: 0.9,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textMuted,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              strings.currentOdometer.toUpperCase(),
+                              style: const TextStyle(
+                                fontSize: 10,
+                                letterSpacing: 1.1,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.textMuted,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              strings.formatKm(vehicle.odometerKm),
+                              style: const TextStyle(
+                                fontSize: 23,
+                                fontWeight: FontWeight.w900,
+                                letterSpacing: 0.5,
+                                fontFeatures: [FontFeature.tabularFigures()],
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        strings.formatKm(vehicle.odometerKm),
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 0.4,
-                          color: AppColors.textPrimary,
+                      TextButton.icon(
+                        onPressed: onUpdateOdometer,
+                        style: TextButton.styleFrom(
+                          backgroundColor:
+                              AppColors.racingOrange.withOpacity(0.16),
+                          foregroundColor: AppColors.racingOrange,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(
+                              color: AppColors.racingOrange.withOpacity(0.4),
+                            ),
+                          ),
+                        ),
+                        icon: const Icon(Icons.edit_rounded, size: 15),
+                        label: Text(
+                          strings.updateOdo,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ],
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: onUpdateOdometer,
-                  style: TextButton.styleFrom(
-                    backgroundColor: AppColors.sky.withOpacity(0.14),
-                    foregroundColor: AppColors.sky,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  icon: const Icon(Icons.edit_rounded, size: 15),
-                  label: Text(
-                    strings.updateOdo,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w700,
-                    ),
                   ),
                 ),
               ],

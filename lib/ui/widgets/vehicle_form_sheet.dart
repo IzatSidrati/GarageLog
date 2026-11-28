@@ -225,11 +225,11 @@ class _VehicleFormSheetState extends State<_VehicleFormSheet> {
         padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         decoration: BoxDecoration(
           color: selected
-              ? AppColors.sky.withOpacity(0.16)
+              ? AppColors.racingOrange.withOpacity(0.18)
               : AppColors.surfaceElevated,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: selected ? AppColors.sky : AppColors.border,
+            color: selected ? AppColors.racingOrange : AppColors.border,
             width: selected ? 1.5 : 1,
           ),
         ),
@@ -239,14 +239,15 @@ class _VehicleFormSheetState extends State<_VehicleFormSheet> {
             Icon(
               icon,
               size: 20,
-              color: selected ? AppColors.sky : AppColors.textSecondary,
+              color: selected ? AppColors.racingOrange : AppColors.textSecondary,
             ),
             const SizedBox(width: 8),
             Text(
               label,
               style: TextStyle(
                 fontWeight: FontWeight.w700,
-                color: selected ? AppColors.sky : AppColors.textSecondary,
+                color:
+                    selected ? AppColors.racingOrange : AppColors.textSecondary,
               ),
             ),
           ],

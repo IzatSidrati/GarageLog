@@ -24,7 +24,7 @@ class GarageLogApp extends StatelessWidget {
     return MaterialApp(
       title: 'GarageLog',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.dark(),
+      theme: AppTheme.light(),
       builder: (context, child) {
         return LayoutBuilder(
           builder: (context, constraints) {
@@ -39,15 +39,15 @@ class GarageLogApp extends StatelessWidget {
                         ? BoxDecoration(
                             border: Border.symmetric(
                               vertical: BorderSide(
-                                color: AppColors.border.withOpacity(0.85),
+                                color: AppColors.border.withOpacity(0.95),
                                 width: 1,
                               ),
                             ),
                             boxShadow: [
                               BoxShadow(
-                                color: Colors.black.withOpacity(0.45),
-                                blurRadius: 32,
-                                spreadRadius: 4,
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 28,
+                                spreadRadius: 2,
                               ),
                             ],
                           )
