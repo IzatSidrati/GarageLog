@@ -321,22 +321,6 @@ class _GarageTabState extends State<GarageTab> {
                   label: Text(s.backupRestoreTitle),
                 ),
               ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  onPressed: () async {
-                    await ctrl.resetSampleData();
-                    if (context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(s.resetDemoDone)),
-                      );
-                    }
-                  },
-                  icon: const Icon(Icons.restore_rounded, size: 18),
-                  label: Text(s.resetDemoLabel),
-                ),
-              ),
             ],
           ),
         ),

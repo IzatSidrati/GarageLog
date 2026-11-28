@@ -9,7 +9,92 @@ import 'package:garage_log/models/service_entry.dart';
 import 'package:garage_log/models/vehicle.dart';
 import 'package:garage_log/services/receipt_parser.dart';
 import 'package:garage_log/state/garage_controller.dart';
+import 'package:garage_log/ui/widgets/branded_splash_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+Future<GarageController> _createPopulatedTestController(DateTime now) async {
+  final ctrl = GarageController();
+  await ctrl.init(now: now);
+  await ctrl.completeInitialSetup(
+    profile: const GarageMasterProfile(
+      garageName: 'Garasi Izat',
+      defaultWorkshop: 'AHASS Motor Mandiri',
+      defaultFuelType: 'Pertamax',
+    ),
+    vehicleName: 'Honda Vario 160 ABS',
+    plateNumber: 'B 4821 KGL',
+    vehicleType: VehicleType.motorcycle,
+    odometerKm: 14680,
+    taxDueDate: now.add(const Duration(days: 22)),
+    createServiceBaselines: false,
+    now: now,
+  );
+
+  final vid = ctrl.activeVehicle!.id;
+  await ctrl.addServiceEntry(
+    vehicleId: vid,
+    category: ServiceCategory.oil,
+    title: 'Ganti Oli Mesin + Gardan',
+    odometerKm: 12850,
+    cost: 115000,
+    workshop: 'AHASS Motor Mandiri',
+    nextIntervalKm: 2000,
+    nextIntervalMonths: 2,
+    partBrand: 'AHM Oil',
+    date: now.subtract(const Duration(days: 54)),
+  );
+  await ctrl.addServiceEntry(
+    vehicleId: vid,
+    category: ServiceCategory.oil,
+    title: 'Ganti Oli Rutin',
+    odometerKm: 10900,
+    cost: 75000,
+    workshop: 'AHASS Motor Mandiri',
+    nextIntervalKm: 2000,
+    nextIntervalMonths: 2,
+    partBrand: 'AHM Oil',
+    date: now.subtract(const Duration(days: 105)),
+  );
+  await ctrl.addServiceEntry(
+    vehicleId: vid,
+    category: ServiceCategory.routine,
+    title: 'Servis CVT',
+    odometerKm: 13600,
+    cost: 165000,
+    workshop: 'AHASS Motor Mandiri',
+    nextIntervalKm: 4000,
+    nextIntervalMonths: 4,
+    partBrand: 'Daytona',
+    date: now.subtract(const Duration(days: 35)),
+  );
+
+  await ctrl.addInventoryItem(
+    name: 'Oli Mesin SPX2 0.8L',
+    type: InventoryType.consumable,
+    quantity: 2,
+    minQuantity: 1,
+    unit: 'botol',
+    unitPrice: 68000,
+    location: 'Rak Oli A1',
+  );
+  await ctrl.addInventoryItem(
+    name: 'Chain Lube',
+    type: InventoryType.consumable,
+    quantity: 1,
+    minQuantity: 1,
+    unit: 'kaleng',
+    unitPrice: 45000,
+  );
+  await ctrl.addInventoryItem(
+    name: 'Kunci Sok Set 8–24mm',
+    type: InventoryType.tool,
+    quantity: 1,
+    unit: 'set',
+    location: 'Toolbox Utama',
+  );
+
+  return ctrl;
+}
 
 void main() {
   setUp(() {
@@ -38,7 +123,7 @@ void main() {
           brakesIntervalMonths: 9,
         ),
         vehicleName: 'Yamaha Aerox 155',
-        plateNumber: 'B 5555 GLG',
+        plateNumber: 'b 5555 glg',
         vehicleType: VehicleType.motorcycle,
         odometerKm: 8500,
         taxDueDate: DateTime(2027, 2, 15),
@@ -50,6 +135,7 @@ void main() {
       expect(ctrl.isSetupCompleted, isTrue);
       expect(ctrl.vehicles.length, 1);
       expect(ctrl.activeVehicle?.name, 'Yamaha Aerox 155');
+      expect(ctrl.activeVehicle?.plateNumber, 'B 5555 GLG');
       expect(ctrl.allServiceEntries.length, 3);
       expect(ctrl.masterProfile.garageName, 'Garasi Izat');
       expect(ctrl.masterProfile.defaultFuelType, 'Pertamax Turbo');
@@ -63,10 +149,8 @@ void main() {
       expect(reloaded.activeVehicle?.plateNumber, 'B 5555 GLG');
     });
 
-    test('seeds 1 free vehicle and blocks 2nd vehicle until Pro Pass unlocked',
-        () async {
-      final ctrl = GarageController();
-      await ctrl.init(now: DateTime(2026, 5, 10), seedDemoIfFresh: true);
+    test('blocks 2nd vehicle on free plan until Pro Pass unlocked', () async {
+      final ctrl = await _createPopulatedTestController(DateTime(2026, 5, 10));
 
       expect(ctrl.vehicles.length, 1);
       expect(ctrl.isProUnlocked, isFalse);
@@ -108,8 +192,7 @@ void main() {
 
     test('computes fuel economy (km/L), cost/km, and bumps vehicle odometer',
         () async {
-      final ctrl = GarageController();
-      await ctrl.init(now: DateTime(2026, 5, 10), seedDemoIfFresh: true);
+      final ctrl = await _createPopulatedTestController(DateTime(2026, 5, 10));
       await ctrl.setProUnlocked(true);
 
       await ctrl.addVehicle(
@@ -147,8 +230,7 @@ void main() {
     test('evaluates health status (safe / soon / overdue) and STNK countdown',
         () async {
       final now = DateTime(2026, 5, 10);
-      final ctrl = GarageController();
-      await ctrl.init(now: now, seedDemoIfFresh: true);
+      final ctrl = await _createPopulatedTestController(now);
       await ctrl.setProUnlocked(true);
 
       await ctrl.addVehicle(
@@ -156,11 +238,10 @@ void main() {
         plateNumber: 'B 7777 CAR',
         type: VehicleType.car,
         odometerKm: 20500,
-        taxDueDate: now.subtract(const Duration(days: 3)), // Overdue tax
+        taxDueDate: now.subtract(const Duration(days: 3)),
       );
       final vid = ctrl.activeVehicle!.id;
 
-      // Oil overdue by 500 km (15000 + 5000 = 20000 < 20500)
       await ctrl.addServiceEntry(
         vehicleId: vid,
         category: ServiceCategory.oil,
@@ -171,7 +252,6 @@ void main() {
         nextIntervalMonths: 6,
         date: now.subtract(const Duration(days: 40)),
       );
-      // Routine due soon (11000 + 10000 = 21000 -> 500 km left <= 15% of 10000)
       await ctrl.addServiceEntry(
         vehicleId: vid,
         category: ServiceCategory.routine,
@@ -182,7 +262,6 @@ void main() {
         nextIntervalMonths: 6,
         date: now.subtract(const Duration(days: 30)),
       );
-      // Brakes safe (18000 + 15000 = 33000 -> 12500 km left)
       await ctrl.addServiceEntry(
         vehicleId: vid,
         category: ServiceCategory.brakesTires,
@@ -206,8 +285,7 @@ void main() {
 
     test('exports resale Service Book summary in Indonesian and English',
         () async {
-      final ctrl = GarageController();
-      await ctrl.init(now: DateTime(2026, 5, 10), seedDemoIfFresh: true);
+      final ctrl = await _createPopulatedTestController(DateTime(2026, 5, 10));
       final v = ctrl.activeVehicle!;
 
       final exportId = ctrl.buildServiceBookExport(v, now: DateTime(2026, 5, 10));
@@ -224,13 +302,14 @@ void main() {
 
     test('manages garage stock & tools, auto-deducts stock on service, and enforces free limit',
         () async {
-      final ctrl = GarageController();
-      await ctrl.init(now: DateTime(2026, 5, 10), seedDemoIfFresh: true);
+      final ctrl = await _createPopulatedTestController(DateTime(2026, 5, 10));
 
-      // Seeded with 3 sample inventory items (limit free = 5)
       expect(ctrl.inventoryItems.length, 3);
-      final initialOil = ctrl.inventoryItems.firstWhere((i) => i.id == 'inv_1');
-      expect(initialOil.quantity, 2);
+      final oilItem = ctrl.inventoryItems
+          .firstWhere((i) => i.name == 'Oli Mesin SPX2 0.8L');
+      final toolItem = ctrl.inventoryItems
+          .firstWhere((i) => i.name == 'Kunci Sok Set 8–24mm');
+      expect(oilItem.quantity, 2);
 
       // Log service using stock item -> auto-deducts quantity by 1
       await ctrl.addServiceEntry(
@@ -239,20 +318,21 @@ void main() {
         title: 'Ganti Oli Mandiri',
         odometerKm: 14700,
         cost: 68000,
-        consumedItemIds: const ['inv_1'],
+        consumedItemIds: [oilItem.id],
       );
-      final afterOil = ctrl.inventoryItems.firstWhere((i) => i.id == 'inv_1');
+      final afterOil =
+          ctrl.inventoryItems.firstWhere((i) => i.id == oilItem.id);
       expect(afterOil.quantity, 1);
       expect(afterOil.isLowStock, isTrue);
 
       // Loan & return tool
-      await ctrl.loanTool('inv_3', 'Budi', now: DateTime(2026, 5, 10));
-      var tool = ctrl.inventoryItems.firstWhere((i) => i.id == 'inv_3');
+      await ctrl.loanTool(toolItem.id, 'Budi', now: DateTime(2026, 5, 10));
+      var tool = ctrl.inventoryItems.firstWhere((i) => i.id == toolItem.id);
       expect(tool.isBorrowed, isTrue);
       expect(tool.borrowedBy, 'Budi');
 
-      await ctrl.returnTool('inv_3');
-      tool = ctrl.inventoryItems.firstWhere((i) => i.id == 'inv_3');
+      await ctrl.returnTool(toolItem.id);
+      tool = ctrl.inventoryItems.firstWhere((i) => i.id == toolItem.id);
       expect(tool.isBorrowed, isFalse);
 
       // Add up to 5 items on free plan, 6th blocked until Pro Pass
@@ -296,8 +376,7 @@ void main() {
     });
 
     test('exports and restores offline JSON backup safely', () async {
-      final ctrl = GarageController();
-      await ctrl.init(now: DateTime(2026, 5, 10), seedDemoIfFresh: true);
+      final ctrl = await _createPopulatedTestController(DateTime(2026, 5, 10));
       await ctrl.setProUnlocked(true);
       await ctrl.addVehicle(
         name: 'Honda Civic',
@@ -317,11 +396,9 @@ void main() {
       expect(backupJson, contains('Honda Civic'));
       expect(backupJson, contains('Filter Oli Civic'));
 
-      // Invalid JSON must fail safely without mutating state
       expect(await ctrl.importBackupJson('not-json'), isFalse);
       expect(await ctrl.importBackupJson('{"app":"OtherApp"}'), isFalse);
 
-      // Restore into a fresh controller
       SharedPreferences.setMockInitialValues({});
       final fresh = GarageController();
       await fresh.init(now: DateTime(2026, 5, 10));
@@ -373,16 +450,13 @@ GRAND TOTAL                \$155.50
 
     test('ranks most frequently used sparepart brands per unit and across garage',
         () async {
-      final ctrl = GarageController();
-      await ctrl.init(now: DateTime(2026, 5, 10), seedDemoIfFresh: true);
+      final ctrl = await _createPopulatedTestController(DateTime(2026, 5, 10));
       final vid = ctrl.activeVehicle!.id;
 
-      // Seeded demo has 2x AHM Oil, 1x Daytona, 1x Nissin
       var top = ctrl.computeTopSparepartBrands(vehicleId: vid);
       expect(top.first.brand, 'AHM Oil');
       expect(top.first.usageCount, 2);
 
-      // Auto-detect Motul from title + add 2 more Motul services -> Motul becomes #1
       for (int i = 0; i < 3; i++) {
         await ctrl.addServiceEntry(
           vehicleId: vid,
@@ -401,17 +475,14 @@ GRAND TOTAL                \$155.50
 
     test('auto-converts values between IDR and USD using offline exchange rate',
         () async {
-      final ctrl = GarageController();
-      await ctrl.init(now: DateTime(2026, 5, 10), seedDemoIfFresh: true);
+      final ctrl = await _createPopulatedTestController(DateTime(2026, 5, 10));
 
-      // Default rate: 1 USD = Rp 16.000
       expect(ctrl.strings.formatCurrency(160000), 'Rp 160.000');
 
       await ctrl.setCurrency(AppCurrency.usd);
       expect(ctrl.strings.formatCurrency(160000), '\$10.00');
       expect(ctrl.strings.toBaseIdr(10.0), closeTo(160000, 0.01));
 
-      // Custom offline exchange rate: 1 USD = Rp 20.000
       await ctrl.updateMasterProfile(
         ctrl.masterProfile.copyWith(usdRateIdr: 20000),
       );
@@ -421,8 +492,7 @@ GRAND TOTAL                \$155.50
 
     test('schedules upcoming offline STNK & service push reminders', () async {
       final now = DateTime(2026, 5, 10, 8, 0);
-      final ctrl = GarageController();
-      await ctrl.init(now: now, seedDemoIfFresh: true);
+      final ctrl = await _createPopulatedTestController(now);
 
       final reminders = ctrl.buildUpcomingReminders(now: now);
       expect(reminders, isNotEmpty);
@@ -439,7 +509,16 @@ GRAND TOTAL                \$155.50
   });
 
   group('GarageLogApp UI smoke tests', () {
-    testWidgets('shows first-install master data form and enters dashboard on submit',
+    testWidgets('shows branded splash screen while controller is loading',
+        (WidgetTester tester) async {
+      final ctrl = GarageController(); // Not initialized yet -> isLoaded == false
+      await tester.pumpWidget(GarageLogApp(controller: ctrl));
+      await tester.pump();
+
+      expect(find.byType(BrandedSplashScreen), findsOneWidget);
+    });
+
+    testWidgets('shows first-install master data form, auto-uppercases plate, and enters dashboard',
         (WidgetTester tester) async {
       final ctrl = GarageController();
       await ctrl.init(now: DateTime(2026, 5, 10));
@@ -447,8 +526,10 @@ GRAND TOTAL                \$155.50
       await tester.pumpWidget(GarageLogApp(controller: ctrl));
       await tester.pumpAndSettle();
 
-      // Fresh install shows FirstRunSetupScreen
+      // Fresh install shows FirstRunSetupScreen without demo button or 100% Offline badge
       expect(find.text('Selamat Datang di GarageLog'), findsOneWidget);
+      expect(find.text('100% Offline'), findsNothing);
+      expect(find.text('Lewati & Coba Data Contoh'), findsNothing);
 
       await tester.enterText(
         find.byKey(const Key('setup_garage_name_field')),
@@ -470,10 +551,14 @@ GRAND TOTAL                \$155.50
         find.byKey(const Key('setup_vehicle_name_field')),
         'Yamaha Aerox 155',
       );
+      // Enter lowercase plate -> UpperCaseTextFormatter converts immediately!
       await tester.enterText(
         find.byKey(const Key('setup_plate_field')),
-        'B 5555 GLG',
+        'b 5555 glg',
       );
+      await tester.pump();
+      expect(find.text('B 5555 GLG'), findsOneWidget);
+
       await tester.enterText(
         find.byKey(const Key('setup_odo_field')),
         '8500',
@@ -487,26 +572,27 @@ GRAND TOTAL                \$155.50
       await tester.tap(find.byKey(const Key('setup_submit_btn')));
       await tester.pumpAndSettle();
 
-      // Should transition to Dashboard with the new master data & vehicle
+      // Should transition to Dashboard with clean garage name header (no "100% Offline")
       expect(find.text('Kesehatan Kendaraan'), findsOneWidget);
+      expect(find.text('Garasi Izat'), findsOneWidget);
+      expect(find.textContaining('100% Offline'), findsNothing);
       expect(find.text('Yamaha Aerox 155'), findsOneWidget);
       expect(find.text('B 5555 GLG'), findsOneWidget);
       expect(find.text('8.500 km'), findsOneWidget);
     });
 
-    testWidgets('renders dashboard, switches ID/EN & Rp/\$, gates 2nd vehicle, and shows Stock & Backup',
+    testWidgets('renders dashboard, switches ID/EN & Rp/\$, gates 2nd vehicle, and shows Stock & Backup without demo reset',
         (WidgetTester tester) async {
-      final ctrl = GarageController();
-      await ctrl.init(now: DateTime(2026, 5, 10), seedDemoIfFresh: true);
+      final ctrl = await _createPopulatedTestController(DateTime(2026, 5, 10));
 
       await tester.pumpWidget(GarageLogApp(controller: ctrl));
       await tester.pumpAndSettle();
 
-      // Default is Indonesian + Rp
       expect(find.text('GarageLog'), findsOneWidget);
       expect(find.text('Kesehatan Kendaraan'), findsOneWidget);
       expect(find.text('ID'), findsOneWidget);
       expect(find.text('Rp'), findsOneWidget);
+      expect(find.textContaining('100% Offline'), findsNothing);
 
       // Quick toggle to English
       await tester.tap(find.byKey(const Key('lang_toggle_button')));
@@ -522,22 +608,22 @@ GRAND TOTAL                \$155.50
       // Navigate to Garage tab and tap Add Vehicle -> should show Pro Pass modal
       await tester.tap(find.text('Garage'));
       await tester.pumpAndSettle();
+      expect(find.text('Reset Sample Data'), findsNothing);
+      expect(find.text('Muat Ulang Data Contoh'), findsNothing);
+
       await tester.tap(find.byKey(const Key('add_vehicle_btn')));
       await tester.pumpAndSettle();
 
       expect(find.text('Upgrade to GarageLog Pro Pass'), findsOneWidget);
       expect(find.byKey(const Key('dev_pro_toggle_button')), findsOneWidget);
 
-      // Activate Pro Pass via Dev Simulation button
       await tester.tap(find.byKey(const Key('dev_pro_toggle_button')));
       await tester.pumpAndSettle();
       expect(ctrl.isProUnlocked, isTrue);
 
-      // Close vehicle form sheet that opened after Pro unlock
       Navigator.of(tester.element(find.byType(Scaffold).first)).pop();
       await tester.pumpAndSettle();
 
-      // Switch to Stock & Tools sub-tab inside Garage
       await tester.tap(find.byKey(const Key('garage_subtab_stock')));
       await tester.pumpAndSettle();
       expect(find.text('Oli Mesin SPX2 0.8L'), findsOneWidget);
@@ -548,7 +634,6 @@ GRAND TOTAL                \$155.50
       );
       expect(find.text('Kunci Sok Set 8–24mm'), findsOneWidget);
 
-      // Scroll down to open Offline Backup & Restore sheet
       await tester.scrollUntilVisible(
         find.byKey(const Key('open_backup_restore_btn')),
         200,
@@ -558,10 +643,9 @@ GRAND TOTAL                \$155.50
       expect(find.byKey(const Key('copy_backup_json_btn')), findsOneWidget);
     });
 
-    testWidgets('auto-fills service form from workshop receipt text parser',
+    testWidgets('auto-fills service form, displays Top Brands, and triggers Push Notification banner',
         (WidgetTester tester) async {
-      final ctrl = GarageController();
-      await ctrl.init(now: DateTime(2026, 5, 10), seedDemoIfFresh: true);
+      final ctrl = await _createPopulatedTestController(DateTime(2026, 5, 10));
 
       await tester.pumpWidget(GarageLogApp(controller: ctrl));
       await tester.pumpAndSettle();
@@ -584,7 +668,6 @@ GRAND TOTAL                \$155.50
         findsWidgets,
       );
 
-      // Close sheet and verify Top Sparepart Brands dashboard card on Dashboard
       Navigator.of(tester.element(find.byType(Scaffold).first)).pop();
       await tester.pumpAndSettle();
 
@@ -596,11 +679,9 @@ GRAND TOTAL                \$155.50
       expect(find.text('AHM Oil'), findsOneWidget);
       expect(find.text('Favorit #1'), findsOneWidget);
 
-      // Tap quick bell icon in AppBar to trigger Push Notification banner
       await tester.tap(find.byKey(const Key('appbar_test_notif_btn')));
       await tester.pump(const Duration(milliseconds: 350));
       expect(find.byKey(const Key('push_notification_banner')), findsOneWidget);
-      // Dismiss banner before test ends to avoid pending timers
       await tester.pump(const Duration(seconds: 6));
     });
   });

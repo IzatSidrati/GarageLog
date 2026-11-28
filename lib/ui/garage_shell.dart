@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../l10n/app_strings.dart';
@@ -8,15 +10,18 @@ import 'tabs/dashboard_tab.dart';
 import 'tabs/fuel_tab.dart';
 import 'tabs/garage_tab.dart';
 import 'tabs/service_tab.dart';
+import 'widgets/branded_splash_screen.dart';
 import 'widgets/push_notification_banner.dart';
 
 class GarageShell extends StatefulWidget {
   const GarageShell({
     super.key,
     required this.controller,
+    this.enableSplashDelay = false,
   });
 
   final GarageController controller;
+  final bool enableSplashDelay;
 
   @override
   State<GarageShell> createState() => _GarageShellState();
@@ -24,6 +29,27 @@ class GarageShell extends StatefulWidget {
 
 class _GarageShellState extends State<GarageShell> {
   int _tabIndex = 0;
+  bool _splashHolding = false;
+  Timer? _splashTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.enableSplashDelay) {
+      _splashHolding = true;
+      _splashTimer = Timer(const Duration(milliseconds: 900), () {
+        if (mounted) {
+          setState(() => _splashHolding = false);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _splashTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,12 +59,8 @@ class _GarageShellState extends State<GarageShell> {
         final ctrl = widget.controller;
         final s = ctrl.strings;
 
-        if (!ctrl.isLoaded) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(color: AppColors.racingOrange),
-            ),
-          );
+        if (!ctrl.isLoaded || _splashHolding) {
+          return const BrandedSplashScreen();
         }
 
         if (ctrl.needsInitialSetup) {
@@ -138,13 +160,13 @@ class _GarageShellState extends State<GarageShell> {
                       ),
                       Text(
                         ctrl.masterProfile.garageName.trim().isNotEmpty
-                            ? '${ctrl.masterProfile.garageName.trim()} • ${s.offlineBadge}'
-                            : s.offlineBadge,
+                            ? ctrl.masterProfile.garageName.trim()
+                            : s.appSubtitle,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
                           fontSize: 10.5,
-                          color: AppColors.sky,
+                          color: AppColors.textSecondary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

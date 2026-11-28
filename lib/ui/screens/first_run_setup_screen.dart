@@ -6,6 +6,7 @@ import '../../models/service_entry.dart';
 import '../../models/vehicle.dart';
 import '../../state/garage_controller.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/input_formatters.dart';
 
 class FirstRunSetupScreen extends StatefulWidget {
   const FirstRunSetupScreen({
@@ -172,11 +173,11 @@ class _FirstRunSetupScreenState extends State<FirstRunSetupScreen> {
                           ),
                         ),
                         Text(
-                          s.offlineBadge,
+                          s.appSubtitle,
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.sky,
+                            color: AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -373,6 +374,7 @@ class _FirstRunSetupScreenState extends State<FirstRunSetupScreen> {
                             key: const Key('setup_plate_field'),
                             controller: _plateCtrl,
                             textCapitalization: TextCapitalization.characters,
+                            inputFormatters: const [UpperCaseTextFormatter()],
                             decoration: InputDecoration(
                               labelText: s.plateNumberLabel,
                               hintText: 'B 1234 XYZ',
@@ -511,16 +513,6 @@ class _FirstRunSetupScreenState extends State<FirstRunSetupScreen> {
                   ),
                   icon: const Icon(Icons.rocket_launch_rounded, size: 19),
                   label: Text(s.startUsingApp),
-                ),
-              ),
-              const SizedBox(height: 10),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton.icon(
-                  key: const Key('setup_demo_btn'),
-                  onPressed: () => ctrl.loadDemoAndCompleteSetup(),
-                  icon: const Icon(Icons.auto_awesome_outlined, size: 18),
-                  label: Text(s.useDemoDataCta),
                 ),
               ),
             ],

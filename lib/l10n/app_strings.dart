@@ -49,7 +49,6 @@ class AppStrings {
   // App header & badges
   String get appTitle => 'GarageLog';
   String get appSubtitle => t('Pelacak Servis & Bensin', 'Service & Fuel Tracker');
-  String get offlineBadge => t('100% Offline', '100% Offline');
   String get proActive => 'PRO';
   String get freePlan => t('Gratis (1 Unit)', 'Free (1 Unit)');
 
@@ -166,8 +165,6 @@ class AppStrings {
   String get settingsSection => t('Preferensi & Offline Data', 'Preferences & Offline Data');
   String get languageLabel => t('Bahasa Aplikasi', 'App Language');
   String get currencyLabel => t('Mata Uang', 'Currency');
-  String get resetDemoLabel => t('Muat Ulang Data Contoh', 'Reset Sample Data');
-  String get resetDemoDone => t('Data contoh berhasil dimuat ulang.', 'Sample data restored.');
 
   // Pro Pass Modal
   String get proModalTitle => t('Upgrade ke GarageLog Pro Pass', 'Upgrade to GarageLog Pro Pass');
@@ -305,7 +302,6 @@ class AppStrings {
         'Creates initial Oil, Routine & Brakes baseline at your current odometer.',
       );
   String get startUsingApp => t('Simpan & Masuk ke Dashboard', 'Save & Open Dashboard');
-  String get useDemoDataCta => t('Lewati & Coba Data Contoh', 'Skip & Try Demo Data');
   String get editMasterData => t('Edit Data Master Garasi', 'Edit Garage Master Data');
   String get masterDataSaved => t('Data master garasi diperbarui!', 'Garage master data updated!');
   String get intervalKmHint => t('+KM', '+KM');

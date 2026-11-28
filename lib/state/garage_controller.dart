@@ -83,7 +83,7 @@ class GarageController extends ChangeNotifier {
     return _vehicles.first;
   }
 
-  Future<void> init({DateTime? now, bool seedDemoIfFresh = false}) async {
+  Future<void> init({DateTime? now}) async {
     _prefs ??= await SharedPreferences.getInstance();
     final prefs = _prefs!;
 
@@ -108,13 +108,7 @@ class GarageController extends ChangeNotifier {
     final initialized = prefs.getBool(_kInitialized) ?? false;
 
     if (!initialized) {
-      if (seedDemoIfFresh) {
-        _seedSampleData(now: now ?? DateTime.now());
-        _setupCompleted = true;
-        await _persistAll();
-      } else {
-        _setupCompleted = false;
-      }
+      _setupCompleted = false;
     } else {
       _loadFromPrefs(prefs);
       _setupCompleted = prefs.getBool(_kSetupCompleted) ?? true;
@@ -169,188 +163,6 @@ class GarageController extends ChangeNotifier {
         !_vehicles.any((v) => v.id == _selectedVehicleId)) {
       _selectedVehicleId = _vehicles.first.id;
     }
-  }
-
-  void _seedSampleData({required DateTime now}) {
-    final today = DateTime(now.year, now.month, now.day);
-    const sampleVehicleId = 'veh_vario_160';
-
-    _masterProfile = const GarageMasterProfile(
-      garageName: 'Garasi Pribadi',
-      defaultWorkshop: 'AHASS Motor Mandiri',
-      defaultFuelType: 'Pertamax',
-      oilIntervalKm: 2000,
-      oilIntervalMonths: 2,
-      routineIntervalKm: 4000,
-      routineIntervalMonths: 4,
-      brakesIntervalKm: 8000,
-      brakesIntervalMonths: 8,
-    );
-
-    _vehicles = [
-      Vehicle(
-        id: sampleVehicleId,
-        name: 'Honda Vario 160 ABS',
-        plateNumber: 'B 4821 KGL',
-        type: VehicleType.motorcycle,
-        odometerKm: 14680,
-        taxDueDate: today.add(const Duration(days: 22)),
-        createdAt: today.subtract(const Duration(days: 120)),
-      ),
-    ];
-    _selectedVehicleId = sampleVehicleId;
-
-    _fuelEntries = [
-      FuelEntry(
-        id: 'fuel_1',
-        vehicleId: sampleVehicleId,
-        date: today.subtract(const Duration(days: 38)),
-        odometerKm: 13840,
-        liters: 4.5,
-        totalCost: 58500,
-        fuelType: 'Pertamax',
-      ),
-      FuelEntry(
-        id: 'fuel_2',
-        vehicleId: sampleVehicleId,
-        date: today.subtract(const Duration(days: 29)),
-        odometerKm: 14038,
-        liters: 4.6,
-        totalCost: 59800,
-        fuelType: 'Pertamax',
-      ),
-      FuelEntry(
-        id: 'fuel_3',
-        vehicleId: sampleVehicleId,
-        date: today.subtract(const Duration(days: 19)),
-        odometerKm: 14232,
-        liters: 4.7,
-        totalCost: 61100,
-        fuelType: 'Pertamax',
-      ),
-      FuelEntry(
-        id: 'fuel_4',
-        vehicleId: sampleVehicleId,
-        date: today.subtract(const Duration(days: 9)),
-        odometerKm: 14450,
-        liters: 4.8,
-        totalCost: 62400,
-        fuelType: 'Pertamax',
-      ),
-      FuelEntry(
-        id: 'fuel_5',
-        vehicleId: sampleVehicleId,
-        date: today.subtract(const Duration(days: 2)),
-        odometerKm: 14665,
-        liters: 4.5,
-        totalCost: 58500,
-        fuelType: 'Pertamax',
-      ),
-    ];
-
-    _serviceEntries = [
-      ServiceEntry(
-        id: 'srv_1',
-        vehicleId: sampleVehicleId,
-        date: today.subtract(const Duration(days: 54)),
-        odometerKm: 12850,
-        category: ServiceCategory.oil,
-        title: 'Ganti Oli Mesin + Oli Gardan',
-        cost: 115000,
-        workshop: 'AHASS Motor Mandiri',
-        nextIntervalKm: 2000,
-        nextIntervalMonths: 2,
-        notes: 'SPX2 0.8L + Gear Oil',
-        partBrand: 'AHM Oil',
-      ),
-      ServiceEntry(
-        id: 'srv_2',
-        vehicleId: sampleVehicleId,
-        date: today.subtract(const Duration(days: 35)),
-        odometerKm: 13600,
-        category: ServiceCategory.routine,
-        title: 'Servis CVT & Bersihkan Throttle Body',
-        cost: 165000,
-        workshop: 'AHASS Motor Mandiri',
-        nextIntervalKm: 4000,
-        nextIntervalMonths: 4,
-        notes: 'Roller & V-Belt masih aman 80%',
-        partBrand: 'Daytona',
-      ),
-      ServiceEntry(
-        id: 'srv_3',
-        vehicleId: sampleVehicleId,
-        date: today.subtract(const Duration(days: 80)),
-        odometerKm: 11500,
-        category: ServiceCategory.brakesTires,
-        title: 'Ganti Kampas Rem Depan & Cek Tekanan Ban',
-        cost: 135000,
-        workshop: 'Planet Ban & Rem',
-        nextIntervalKm: 8000,
-        nextIntervalMonths: 8,
-        notes: 'Kampas original, ban depan/belakang tebal',
-        partBrand: 'Nissin',
-      ),
-      ServiceEntry(
-        id: 'srv_4',
-        vehicleId: sampleVehicleId,
-        date: today.subtract(const Duration(days: 105)),
-        odometerKm: 10900,
-        category: ServiceCategory.oil,
-        title: 'Ganti Oli Mesin Rutin',
-        cost: 75000,
-        workshop: 'AHASS Motor Mandiri',
-        nextIntervalKm: 2000,
-        nextIntervalMonths: 2,
-        notes: 'SPX2 0.8L',
-        partBrand: 'AHM Oil',
-      ),
-    ];
-
-    _inventoryItems = [
-      const GarageInventoryItem(
-        id: 'inv_1',
-        name: 'Oli Mesin SPX2 0.8L',
-        type: InventoryType.consumable,
-        quantity: 2,
-        minQuantity: 1,
-        unit: 'botol',
-        unitPrice: 68000,
-        location: 'Rak Oli A1',
-        notes: 'Stok cadangan ganti oli mandiri',
-      ),
-      const GarageInventoryItem(
-        id: 'inv_2',
-        name: 'Chain Lube & Brake Cleaner',
-        type: InventoryType.consumable,
-        quantity: 1,
-        minQuantity: 1,
-        unit: 'kaleng',
-        unitPrice: 45000,
-        location: 'Rak Cairan A2',
-      ),
-      const GarageInventoryItem(
-        id: 'inv_3',
-        name: 'Kunci Sok Set 8–24mm',
-        type: InventoryType.tool,
-        quantity: 1,
-        minQuantity: 1,
-        unit: 'set',
-        location: 'Toolbox Utama',
-        notes: 'Lengkap ratchet + extension bar',
-      ),
-    ];
-  }
-
-  Future<void> resetSampleData({DateTime? now}) async {
-    _seedSampleData(now: now ?? DateTime.now());
-    _setupCompleted = true;
-    await _persistAll();
-    notifyListeners();
-  }
-
-  Future<void> loadDemoAndCompleteSetup({DateTime? now}) async {
-    await resetSampleData(now: now);
   }
 
   Future<void> completeInitialSetup({

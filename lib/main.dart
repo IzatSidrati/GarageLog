@@ -8,16 +8,18 @@ void main() {
   WidgetsFlutterBinding.ensureInitialized();
   final controller = GarageController();
   controller.init();
-  runApp(GarageLogApp(controller: controller));
+  runApp(GarageLogApp(controller: controller, enableSplashDelay: true));
 }
 
 class GarageLogApp extends StatelessWidget {
   const GarageLogApp({
     super.key,
     required this.controller,
+    this.enableSplashDelay = false,
   });
 
   final GarageController controller;
+  final bool enableSplashDelay;
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +63,10 @@ class GarageLogApp extends StatelessWidget {
           },
         );
       },
-      home: GarageShell(controller: controller),
+      home: GarageShell(
+        controller: controller,
+        enableSplashDelay: enableSplashDelay,
+      ),
     );
   }
 }

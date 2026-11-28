@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../models/vehicle.dart';
 import '../../state/garage_controller.dart';
 import '../../theme/app_theme.dart';
+import '../../utils/input_formatters.dart';
 
 Future<bool> showVehicleFormSheet({
   required BuildContext context,
@@ -144,8 +145,10 @@ class _VehicleFormSheetState extends State<_VehicleFormSheet> {
                 children: [
                   Expanded(
                     child: TextFormField(
+                      key: const Key('vehicle_form_plate_field'),
                       controller: _plateController,
                       textCapitalization: TextCapitalization.characters,
+                      inputFormatters: const [UpperCaseTextFormatter()],
                       decoration: InputDecoration(
                         labelText: s.plateNumberLabel,
                         hintText: 'B 1234 XYZ',
